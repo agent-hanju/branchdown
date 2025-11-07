@@ -1,0 +1,59 @@
+# 프로덕션 환경 설정
+# application.yml의 개발 설정을 오버라이드
+
+spring:
+  # 데이터베이스 (환경변수 필수화 - 기본값 제거)
+  datasource:
+    url: ${DB_URL}  # 필수: jdbc:mariadb://host:port/database
+    username: ${DB_USERNAME}  # 필수
+    password: ${DB_PASSWORD}  # 필수
+    driver-class-name: ${DB_DRIVER:org.mariadb.jdbc.Driver}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate  # 운영: 스키마 자동 변경 금지 (Flyway/Liquibase 사용 권장)
+    show-sql: false
+    properties:
+      hibernate:
+        '[format_sql]': false
+        '[use_sql_comments]': false
+
+# JWT 설정 (환경변수 필수화)
+jwt:
+  validator:
+    public-key: ${JWT_PUBLIC_KEY}  # 필수: 기본값 제거
+
+# Swagger 비활성화 (프로덕션 보안)
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# Actuator 보안 강화
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics  # 필수 엔드포인트만 노출
+        exclude: heapdump,threaddump,env,configprops  # 민감 정보 명시적 제외
+  endpoint:
+    health:
+      show-details: when-authorized  # 인증된 경우만 상세 정보 표시
+  server:
+    port: ${MANAGEMENT_PORT:8084}  # 관리 포트 분리 (보안 강화)
+
+# 파일 로깅
+logging:
+  level:
+    root: INFO
+    '[me.hanju.branchdown]': INFO
+    '[org.hibernate.SQL]': WARN
+    '[org.hibernate.type.descriptor.sql.BasicBinder]': WARN
+  file:
+    name: /var/log/branchdown/application.log
+    max-size: 100MB
+    max-history: 30  # 30일치 보관
+  pattern:
+    file: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
+    console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'

@@ -1,0 +1,86 @@
+name: branchdown
+
+services:
+  # MariaDB Database
+  mariadb:
+    image: mariadb:10.11
+    container_name: branchdown-mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MARIADB_PASSWORD:-rootpass}  # root 비밀번호
+      MYSQL_DATABASE: ${MARIADB_DB:-lex_ai}
+      TZ: Asia/Seoul
+    ports:
+      - "${MARIADB_PORT:-3306}:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - branchdown-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized"]
+      start_period: 1m
+      start_interval: 10s
+      interval: 1m
+      timeout: 5s
+      retries: 3
+
+  # Branchdown Application
+  branchdown:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: branchdown-app
+    restart: unless-stopped
+    environment:
+      # Database configuration
+      MARIADB_HOST: mariadb
+      MARIADB_PORT: 3306
+      MARIADB_DB: ${MARIADB_DB:-lex_ai}
+      MARIADB_USERNAME: ${MARIADB_USERNAME:-branchdown_user}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-branchdown_password}
+
+      # JWT configuration (validator - public key)
+      JWT_ISSUER: ${JWT_ISSUER:-lex-auth}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-lex-services}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:-}
+
+      # Spring Boot configuration
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+
+      # Server configuration
+      SERVER_PORT: 8083
+      MANAGEMENT_PORT: 8084
+
+      # JVM options
+      JAVA_OPTS: >
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=75.0
+        -XX:InitialRAMPercentage=50.0
+        -Djava.security.egd=file:/dev/./urandom
+    ports:
+      - "${SERVER_PORT:-8083}:8083"
+      - "${MANAGEMENT_PORT:-8084}:8084"
+    volumes:
+      - branchdown_logs:/var/log/branchdown
+    networks:
+      - branchdown-network
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  mariadb_data:
+    driver: local
+  branchdown_logs:
+    driver: local
+
+networks:
+  branchdown-network:
+    driver: bridge
