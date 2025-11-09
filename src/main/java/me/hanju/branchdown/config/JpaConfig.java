@@ -2,7 +2,6 @@ package me.hanju.branchdown.config;
 
 import java.util.Optional;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,7 +31,6 @@ import me.hanju.auth.validator.domain.Account;
     "me.hanju.branchdown.repository"
 })
 @EnableTransactionManagement
-@ConditionalOnProperty(prefix = "hanju.authenticator", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class JpaConfig {
 
   /**
@@ -52,13 +50,9 @@ public class JpaConfig {
       if (authentication == null ||
           !authentication.isAuthenticated() ||
           "anonymousUser".equals(authentication.getPrincipal())) {
-        // 인증되지 않은 경우 또는 익명 사용자인 경우 "system" 반환
-        // 회원가입 등 인증 전 작업에서 사용됨
         return Optional.of("system");
       }
 
-      // JWT 인증 후 principal에는 Account 객체가 저장됨
-      // JwtAuthenticationFilter에서 JwtAuthenticationToken(account, ...) 생성
       Object principal = authentication.getPrincipal();
 
       if (principal instanceof Account account) {
