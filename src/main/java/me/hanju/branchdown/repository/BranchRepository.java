@@ -22,19 +22,4 @@ public interface BranchRepository extends JpaRepository<BranchEntity, BranchId> 
       LIMIT 1
       """)
   Optional<BranchEntity> findLatestBranchInChat(StreamEntity stream);
-
-  @Query("""
-      SELECT b
-      FROM BranchEntity b
-      JOIN b.points p
-      WHERE b.stream = :stream
-        AND b.path LIKE CONCAT(:path, '%')
-        AND p.depth >= :depth
-      ORDER BY p.createdAt DESC
-      LIMIT 1
-      """)
-  Optional<BranchEntity> findLatestBranchInPath(
-      StreamEntity stream,
-      String path,
-      int depth);
 }

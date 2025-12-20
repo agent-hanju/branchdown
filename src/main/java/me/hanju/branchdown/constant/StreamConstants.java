@@ -9,9 +9,6 @@ public final class StreamConstants {
     // 유틸리티 클래스는 인스턴스화 방지
   }
 
-  /** 기본 스트림 제목 */
-  public static final String DEFAULT_STREAM_TITLE = "New Chat";
-
   /** 루트 포인트의 depth */
   public static final int ROOT_POINT_DEPTH = 0;
 

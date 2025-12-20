@@ -1,15 +1,19 @@
 package me.hanju.branchdown.entity;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Comment;
 import org.hibernate.annotations.DynamicUpdate;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
@@ -20,7 +24,6 @@ import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PostLoad;
 import jakarta.persistence.PostPersist;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -30,29 +33,24 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import lombok.experimental.SuperBuilder;
 import me.hanju.branchdown.config.IntegerListConverter;
 import me.hanju.branchdown.dto.PointDto;
 
 /** 하나의 포인트를 지정하는 엔티티 */
-@SuperBuilder
+@Builder
 @Getter
 @Setter(AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@ToString(callSuper = false, exclude = { "branch", "childBranchNums" })
-@EqualsAndHashCode(callSuper = false, exclude = { "branch", "childBranchNums" })
+@ToString(exclude = { "branch", "childBranchNums" })
+@EqualsAndHashCode(exclude = { "branch", "childBranchNums" })
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "points")
 @DynamicUpdate
-public class PointEntity extends CreateAuditEntity {
-  @PrePersist
-  public void generateUuid() {
-    if (this.uuid == null) {
-      this.uuid = UUID.randomUUID();
-    }
-  }
+public class PointEntity {
 
+  // 수동 동기화 필요
   @PostLoad
   @PostPersist
   public void syncBranchNum() {
@@ -66,10 +64,6 @@ public class PointEntity extends CreateAuditEntity {
   @Column(name = "point_id")
   private Long id;
 
-  @Column(nullable = false)
-  @Comment("공개 UUID (외부 노출용)")
-  private UUID uuid;
-
   @Column(name = "item_id", updatable = false)
   @Comment("저장할 아이템의 ID, root의 경우 null")
   private String itemId;
@@ -78,6 +72,11 @@ public class PointEntity extends CreateAuditEntity {
   @Column(name = "depth", nullable = false, updatable = false)
   @Comment("0부터 시작하는 stream 내에서의 depth")
   private int depth;
+
+  @CreatedDate
+  @Column(nullable = false, name = "created_at")
+  @ColumnDefault(value = "now()")
+  private Instant createdAt;
 
   /** 이 포인트의 소속 브랜치 */
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
@@ -91,8 +90,10 @@ public class PointEntity extends CreateAuditEntity {
 
   /**
    * 이 포인트의 소속 스트림(읽기 전용), branch 필드에 의해 결정
-   * <p><strong>주의:</strong> 이 필드는 Repository의 JPQL 쿼리 전용입니다.
-   * Java 코드에서는 {@code point.getBranch().getStream()}을 사용하세요.</p>
+   * <p>
+   * <strong>주의:</strong> 이 필드는 Repository의 JPQL 쿼리 전용입니다.
+   * Java 코드에서는 {@code point.getBranch().getStream()}을 사용하세요.
+   * </p>
    */
   @Getter(AccessLevel.PRIVATE)
   @ManyToOne(fetch = FetchType.LAZY)
@@ -126,7 +127,6 @@ public class PointEntity extends CreateAuditEntity {
   }
 
   public PointDto.Response toResponse() {
-    return new PointDto.Response(this.uuid, this.getBranchNum(), this.itemId, this.childBranchNums, this.getCreatedBy(),
-        this.getCreatedAt());
+    return new PointDto.Response(this.id, this.getBranchNum(), this.itemId, this.childBranchNums, this.createdAt);
   }
 }

@@ -1,7 +1,5 @@
 package me.hanju.branchdown.service;
 
-import java.util.UUID;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,14 +26,14 @@ public class PointService {
   /**
    * 지정한 PointEntity 아래에 적절한 브랜칭을 후 PointEntity를 새로 추가한다.
    *
-   * @param uuid   지정할 PointEntity의 uuid
+   * @param id     지정할 PointEntity의 id
    * @param itemId 새로 추가할 PointEntity에 들어갈 item의 ID
    * @return
    */
   @Transactional
-  public PointDto.Response pointDown(UUID uuid, String itemId) {
+  public PointDto.Response pointDown(Long id, String itemId) {
     // 1. 기준 포인트 확인
-    PointEntity point = pointRepository.findByUuid(uuid)
+    PointEntity point = pointRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("Point not found"));
 
     // 2. 브랜치 상태 확인

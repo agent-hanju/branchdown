@@ -2,10 +2,7 @@ package me.hanju.branchdown.service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,13 +31,9 @@ public class StreamService {
   private final PointRepository pointRepository;
 
   @Transactional
-  public StreamDto.Response createStream(StreamDto.CreateRequest request) {
+  public StreamDto.Response createStream() {
     // 1. 스트림 생성
-    StreamEntity newStream = streamRepository.save(StreamEntity.builder()
-        .title(request.title() != null && !request.title().isBlank()
-            ? request.title()
-            : StreamConstants.DEFAULT_STREAM_TITLE)
-        .build());
+    StreamEntity newStream = streamRepository.save(StreamEntity.builder().build());
 
     // 2. 스트림의 기본 브랜치 생성
     BranchEntity initialBranch = branchRepository.save(BranchEntity.builder()
@@ -63,49 +56,25 @@ public class StreamService {
     return newStream.toResponse();
   }
 
-  public StreamDto.Response getStream(UUID uuid) {
+  public StreamDto.Response getStream(Long id) {
     StreamEntity stream = streamRepository
-        .findByUuid(uuid)
+        .findById(id)
         .orElseThrow(() -> new IllegalArgumentException("Stream not found"));
     return stream.toResponse();
   }
 
-  public Page<StreamDto.ListItem> getStreams(String query, String createdBy, Pageable pageable) {
-    if (query != null && !query.isBlank()) {
-      return streamRepository.findAllByTitleContainingIgnoreCaseAndCreatedBy(query, createdBy, pageable);
-    } else {
-      return streamRepository.findAllByCreatedBy(createdBy, pageable);
-    }
-  }
-
   @Transactional
-  public StreamDto.Response updateStream(UUID uuid, StreamDto.UpdateRequest request) {
-    StreamEntity stream = streamRepository.findByUuid(uuid)
-        .orElseThrow(() -> new IllegalArgumentException("Stream not found"));
-
-    if (request.title() != null) {
-      stream.setTitle(request.title());
-      stream.update();
-    }
-
-    return stream.toResponse();
-  }
-
-  @Transactional
-  public void deleteChat(UUID uuid) {
-    StreamEntity stream = streamRepository.findByUuid(uuid)
+  public void deleteStream(Long id) {
+    StreamEntity stream = streamRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("Stream not found"));
     streamRepository.delete(stream);
   }
 
   /**
    * 해당 스트림의 처음부터 가장 최근에 포인트를 추가한 브랜치까지의 스트림에 속하는 포인트 목록을 반환
-   *
-   * @param uuid
-   * @return
    */
-  public List<PointDto.Response> getStreamPoints(final UUID uuid) {
-    StreamEntity stream = streamRepository.findByUuid(uuid)
+  public List<PointDto.Response> getStreamPoints(Long id) {
+    StreamEntity stream = streamRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("Stream not found"));
     BranchEntity latestBranch = branchRepository
         .findLatestBranchInChat(stream)
@@ -120,11 +89,8 @@ public class StreamService {
     return messages.stream().map(PointEntity::toResponse).toList();
   }
 
-  public List<PointDto.Response> getBranchMessages(
-      final UUID uuid,
-      final int branchNum,
-      final int depth) {
-    StreamEntity stream = streamRepository.findByUuid(uuid)
+  public List<PointDto.Response> getBranchMessages(Long id, int branchNum, int depth) {
+    StreamEntity stream = streamRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("Stream not found"));
 
     BranchEntity branch = branchRepository
@@ -134,28 +100,12 @@ public class StreamService {
     String basePath = PathUtils.appendToPath(branch.getPath(), branchNum);
     List<Integer> branchNums = PathUtils.parsePath(basePath);
 
-    List<PointEntity> points = pathToPoints(
-        stream.getId(),
-        branchNums,
-        depth);
+    List<PointEntity> points = pathToPoints(stream.getId(), branchNums, depth);
     return points.stream().map(PointEntity::toResponse).toList();
   }
 
-  /**
-   * branchNums path 기반 메시지 목록 구해오기
-   *
-   * @param streamId
-   * @param branchNums
-   * @return
-   */
-  private List<PointEntity> pathToPoints(
-      Long streamId,
-      List<Integer> branchNums,
-      int depth) {
-    List<PointEntity> messages = pointRepository.findAllUsingPath(
-        streamId,
-        branchNums,
-        depth);
+  private List<PointEntity> pathToPoints(Long streamId, List<Integer> branchNums, int depth) {
+    List<PointEntity> messages = pointRepository.findAllUsingPath(streamId, branchNums, depth);
 
     // 위 쿼리는 각 depth 별 최대 branchNum인 message들을 가져오므로 branchNum 변곡점에서 절삭
     int i = 0;

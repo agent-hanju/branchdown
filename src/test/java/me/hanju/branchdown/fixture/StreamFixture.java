@@ -1,9 +1,7 @@
 package me.hanju.branchdown.fixture;
 
 import java.util.ArrayList;
-import java.util.List;
 
-import me.hanju.branchdown.dto.StreamDto;
 import me.hanju.branchdown.entity.BranchEntity;
 import me.hanju.branchdown.entity.PointEntity;
 import me.hanju.branchdown.entity.StreamEntity;
@@ -12,16 +10,12 @@ import me.hanju.branchdown.entity.id.BranchId;
 /**
  * 테스트용 Stream 관련 Fixture
  *
- * <p>테스트에서 사용할 Stream, Branch, Point 엔티티 및 DTO를 쉽게 생성할 수 있습니다.</p>
+ * <p>테스트에서 사용할 Stream, Branch, Point 엔티티를 쉽게 생성할 수 있습니다.</p>
  *
  * <h3>사용 예시</h3>
  * <pre>{@code
- * // DTO 생성
- * StreamDto.CreateRequest createRequest = StreamFixture.createRequest("My Chat");
- * StreamDto.UpdateRequest updateRequest = StreamFixture.updateRequest("Updated Chat");
- *
  * // Entity 생성
- * StreamEntity stream = StreamFixture.streamEntity("Test Stream");
+ * StreamEntity stream = StreamFixture.streamEntity();
  * BranchEntity branch = StreamFixture.branchEntity(stream, 0, "");
  * PointEntity point = StreamFixture.pointEntity(branch, 0, "item-1");
  * }</pre>
@@ -33,43 +27,12 @@ public class StreamFixture {
   }
 
   /**
-   * Stream 생성 요청 DTO를 생성합니다.
-   *
-   * @param title 스트림 제목 (null 가능)
-   * @return StreamDto.CreateRequest
-   */
-  public static StreamDto.CreateRequest createRequest(String title) {
-    return new StreamDto.CreateRequest(title);
-  }
-
-  /**
-   * 기본 제목으로 Stream 생성 요청 DTO를 생성합니다.
-   *
-   * @return StreamDto.CreateRequest
-   */
-  public static StreamDto.CreateRequest createRequest() {
-    return new StreamDto.CreateRequest(null);
-  }
-
-  /**
-   * Stream 수정 요청 DTO를 생성합니다.
-   *
-   * @param title 새 제목
-   * @return StreamDto.UpdateRequest
-   */
-  public static StreamDto.UpdateRequest updateRequest(String title) {
-    return new StreamDto.UpdateRequest(title);
-  }
-
-  /**
    * StreamEntity를 생성합니다.
    *
-   * @param title 스트림 제목
    * @return StreamEntity
    */
-  public static StreamEntity streamEntity(String title) {
+  public static StreamEntity streamEntity() {
     return StreamEntity.builder()
-        .title(title)
         .branches(new ArrayList<>())
         .nextBranchNum(0)
         .build();

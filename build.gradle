@@ -1,54 +1,62 @@
 plugins {
-    id 'java'
-    id 'org.springframework.boot' version '3.3.4'
-    id 'io.spring.dependency-management' version '1.1.6'
+  id 'java'
+  id 'org.springframework.boot' version '3.5.9'
+  id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'me.hanju'
-version = 'v0.1.0'
+version = '0.2.0'
+description = "Branching, Append-Only Tree Structure API"
 
 java {
-    sourceCompatibility = '17'
-    targetCompatibility = '17'
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(21)
+  }
 }
 
 repositories {
-    mavenCentral()
-    maven { url 'https://jitpack.io' }
+  mavenCentral()
+}
+
+ext {
+  set('springCloudVersion', "2025.0.1")
+}
+
+dependencyManagement {
+  imports {
+    mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+  }
 }
 
 dependencies {
-    // Validator
-    implementation 'com.github.agent-hanju:hanju-auth:v0.1.0'
+  implementation 'org.springframework.boot:spring-boot-starter-web'
+  implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+  implementation 'org.springframework.boot:spring-boot-starter-validation'
+  implementation 'org.springframework.boot:spring-boot-starter-actuator'
+  implementation 'org.springframework.cloud:spring-cloud-starter-consul-discovery'
+  implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+  developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-    // Spring Boot
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+  runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
 
-    // Swagger
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+  compileOnly 'org.projectlombok:lombok'
+  annotationProcessor 'org.projectlombok:lombok'
 
-    // Database
-    runtimeOnly 'com.h2database:h2'
-    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
-    implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.2'
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+  testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+  testImplementation 'org.testcontainers:junit-jupiter'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+  testImplementation 'org.testcontainers:mariadb'
+  testCompileOnly 'org.projectlombok:lombok'
+  testAnnotationProcessor 'org.projectlombok:lombok'
 
-    // Lombok
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-
-    // Test
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.security:spring-security-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testCompileOnly 'org.projectlombok:lombok'
-    testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
+  useJUnitPlatform()
+}
+
+// bootRun 대신 bootTestRun 사용
+tasks.named('bootRun') {
+  enabled = false
 }

@@ -1,9 +1,6 @@
 package me.hanju.branchdown.controller;
 
-import java.util.UUID;
-
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,12 +24,11 @@ public class PointController {
   private final PointService pointService;
 
   @Operation(summary = "포인트 추가", description = "지정한 포인트 아래에 새로운 포인트를 추가합니다 (브랜칭 포함)")
-  @PostMapping("/{uuid}/down")
-  @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+  @PostMapping("/{id}/down")
   public ResponseEntity<CommonResponseDto<PointDto.Response>> pointDown(
-      @PathVariable UUID uuid,
+      @PathVariable Long id,
       @Valid @RequestBody PointDto.DownRequest request) {
-    PointDto.Response response = pointService.pointDown(uuid, request.itemId());
+    PointDto.Response response = pointService.pointDown(id, request.itemId());
     return ResponseEntity.ok(CommonResponseDto.success(response));
   }
 }

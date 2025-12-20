@@ -3,25 +3,23 @@ package me.hanju.branchdown.entity;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Comment;
 import org.hibernate.annotations.DynamicUpdate;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,56 +28,31 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import lombok.experimental.SuperBuilder;
-import me.hanju.auth.validator.domain.Account;
 import me.hanju.branchdown.dto.StreamDto;
 
 /** 여러 브랜치를 관리하는 하나의 흐름 엔티티 */
-@SuperBuilder
+@Builder
 @Getter
 @Setter(AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
-@ToString(callSuper = false, exclude = { "updatedBy", "updatedAt", "branches", "nextBranchNum" })
-@EqualsAndHashCode(callSuper = false, exclude = { "updatedBy", "updatedAt", "branches", "nextBranchNum" })
+@ToString(exclude = { "branches" })
+@EqualsAndHashCode(exclude = { "branches" })
 @Entity
-@Table(name = "streams", uniqueConstraints = @UniqueConstraint(name = "UK_stream_uuid", columnNames = "uuid"))
+@EntityListeners(AuditingEntityListener.class)
+@Table(name = "streams")
 @DynamicUpdate
-public class StreamEntity extends CreateAuditEntity {
-
-  @PrePersist
-  public void generateUuid() {
-    if (this.uuid == null) {
-      this.uuid = UUID.randomUUID();
-    }
-    if (this.updatedAt == null) {
-      this.updatedAt = Instant.now();
-    }
-    if (this.updatedBy == null) {
-      this.updatedBy = this.getCreatedBy() != null ? this.getCreatedBy() : "system";
-    }
-  }
+public class StreamEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "stream_id")
   private Long id;
 
-  @Column(nullable = false)
-  @Comment("공개 UUID (외부 노출용)")
-  private UUID uuid;
-
-  @Column(nullable = false, name = "updated_by")
-  private String updatedBy;
-
-  @Column(nullable = false, name = "updated_at")
+  @CreatedDate
+  @Column(nullable = false, name = "created_at")
   @ColumnDefault(value = "now()")
-  private Instant updatedAt;
-
-  @Setter
-  @Builder.Default
-  @Column(nullable = false, length = 64)
-  private String title = "";
+  private Instant createdAt;
 
   @Builder.Default
   @OneToMany(mappedBy = "stream", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
@@ -91,11 +64,6 @@ public class StreamEntity extends CreateAuditEntity {
   @Comment("다음에 붙일 브랜치 번호")
   private Integer nextBranchNum = 0;
 
-  /**
-   * 브랜치를 추가하고 nextBranchNum을 branches의 size에 맞춰 증가
-   *
-   * @param branch 추가할 BranchEntity
-   */
   public void addBranch(final BranchEntity branch) {
     if (branch != null) {
       this.branches.add(branch);
@@ -103,23 +71,7 @@ public class StreamEntity extends CreateAuditEntity {
     }
   }
 
-  /** 수동 업데이트 시점에 호출 */
-  public void update() {
-    this.updatedAt = Instant.now();
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication != null) {
-      Object principal = authentication.getPrincipal();
-      if (principal instanceof Account account) {
-        this.updatedBy = account.getPublicId();
-        return;
-      }
-    }
-    this.updatedBy = "system";
-
-  }
-
   public StreamDto.Response toResponse() {
-    return new StreamDto.Response(this.uuid, this.title, this.getCreatedBy(), this.getCreatedAt(), this.updatedBy,
-        this.updatedAt);
+    return new StreamDto.Response(this.id, this.createdAt);
   }
 }

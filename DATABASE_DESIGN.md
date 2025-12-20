@@ -4,16 +4,11 @@
 
 ### streams
 
-| 컬럼              | 타입         | 제약                    | 설명                        |
-| ----------------- | ------------ | ----------------------- | --------------------------- |
-| `stream_id`       | BIGINT       | PK, AUTO_INCREMENT      | 내부 ID (데이터베이스 전용) |
-| `uuid`            | UUID         | UNIQUE, NOT NULL        | 공개 UUID (외부 API 노출용) |
-| `title`           | VARCHAR(64)  | NOT NULL, DEFAULT ''    | 스트림 제목                 |
-| `next_branch_num` | INT          | NOT NULL, DEFAULT 0     | 다음에 생성될 브랜치 번호   |
-| `created_by`      | VARCHAR(10)  | NOT NULL                | 생성자 (publicId)           |
-| `created_at`      | TIMESTAMP(6) | NOT NULL                | 생성 시간                   |
-| `updated_by`      | VARCHAR(10)  | NOT NULL                | 최종 수정자                 |
-| `updated_at`      | TIMESTAMP(6) | NOT NULL, DEFAULT NOW() | 최종 수정 시간              |
+| 컬럼              | 타입         | 제약               | 설명                      |
+| ----------------- | ------------ | ------------------ | ------------------------- |
+| `stream_id`       | BIGINT       | PK, AUTO_INCREMENT | 스트림 ID                 |
+| `next_branch_num` | INT          | DEFAULT 0          | 다음에 생성될 브랜치 번호 |
+| `created_at`      | TIMESTAMP(6) | NOT NULL           | 생성 시간                 |
 
 ### branches
 
@@ -30,13 +25,11 @@
 | 컬럼                | 타입         | 제약                                | 설명                                           |
 | ------------------- | ------------ | ----------------------------------- | ---------------------------------------------- |
 | `point_id`          | BIGINT       | PK, AUTO_INCREMENT                  | 포인트 고유 ID                                 |
-| `uuid`              | UUID         | NOT NULL                            | 공개 UUID (외부 API 노출용)                    |
-| `stream_id`         | BIGINT       | FK → branches(stream_id), NOT NULL  | 소속 스트림 ID (읽기 전용)                     |
-| `branch_num`        | INT          | FK → branches(branch_num), NOT NULL | 소속 브랜치 번호 (읽기 전용)                   |
+| `stream_id`         | BIGINT       | FK → branches(stream_id), NOT NULL  | 소속 스트림 ID                                 |
+| `branch_num`        | INT          | FK → branches(branch_num), NOT NULL | 소속 브랜치 번호                               |
 | `item_id`           | VARCHAR(255) | NULLABLE                            | 저장할 아이템의 ID (root는 NULL)               |
 | `depth`             | INT          | NOT NULL                            | 깊이 (0부터 시작)                              |
 | `child_branch_nums` | VARCHAR(256) | DEFAULT ''                          | 이 포인트에서 분기된 브랜치 번호들 (쉼표 구분) |
-| `created_by`        | VARCHAR(10)  | NOT NULL                            | 생성자 (publicId)                              |
 | `created_at`        | TIMESTAMP(6) | NOT NULL                            | 생성 시간                                      |
 
 ## Branch 조회 방식 (Path-based Query)

@@ -1,89 +1,46 @@
-spring:
-  application:
-    name: branchdown
-
-  # H2 인메모리 DB (로컬 개발 환경)
-  datasource:
-    driver-class-name: org.h2.Driver
-    url: jdbc:h2:mem:branchdown;MODE=MariaDB;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    username: sa
-    password:
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
-      connection-timeout: 30000
-
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-      settings:
-        web-allow-others: false
-
-  jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
-    hibernate:
-      ddl-auto: create-drop # H2는 매번 스키마 재생성
-    show-sql: true
-    properties:
-      hibernate:
-        '[default_batch_fetch_size]': 100
-        '[format_sql]': true
-        '[use_sql_comments]': true
-    open-in-view: false # OSIV 비활성화 (성능 권장)
-
-  data:
-    jpa:
-      repositories:
-        bootstrap-mode: default
-
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
-
 server:
   port: ${SERVER_PORT:8083}
   shutdown: graceful
-  compression:
-    enabled: true
-    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+
+spring:
+  application:
+    name: branchdown
+  # datasource: bootTestRun 시 Testcontainers가 자동 설정
+  cloud:
+    consul:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        '[show_sql]': true
+        '[format_sql]': true
+        '[default_batch_fetch_size]': 16
+    open-in-view: false
+
+management:
+  server:
+    port: ${MANAGEMENT_PORT:8091}
+
+springdoc:
+  swagger-ui:
+    path: /docs
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
 
 logging:
   level:
     root: INFO
-    '[me.hanju.branchdown]': DEBUG
-    '[org.hibernate.SQL]': DEBUG
-    '[org.hibernate.type.descriptor.sql.BasicBinder]': TRACE
+    me:
+      hanju:
+        branchdown: DEBUG
+    org:
+      hibernate:
+        orm:
+          jdbc:
+            bind: TRACE
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss} - %msg%n'
-
-hanju:
-  jwt:
-    validator:
-      enabled: true
-      secret-key: dev-dummy-secret-key-for-local-testing-only-min-256-bits-aaaaaaaaaaaaaaaaaa
-      issuer: ${JWT_ISSUER:branchdown-auth}
-
-# Swagger 설정 (개발 환경 기본 활성화)
-springdoc:
-  api-docs:
-    path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    operations-sorter: alpha
-    tags-sorter: alpha
-
-# Actuator 설정 (개발 환경 - 모든 엔드포인트 노출)
-management:
-  endpoints:
-    web:
-      exposure:
-        include: '*' # health, info, metrics 등 모든 엔드포인트
-      base-path: /actuator
-  endpoint:
-    health:
-      show-details: always # 상세 정보 표시
-  info:
-    env:
-      enabled: true

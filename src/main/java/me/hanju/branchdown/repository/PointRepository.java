@@ -1,19 +1,15 @@
 package me.hanju.branchdown.repository;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import me.hanju.branchdown.entity.BranchEntity;
 import me.hanju.branchdown.entity.PointEntity;
 
 @Repository
 public interface PointRepository extends JpaRepository<PointEntity, Long> {
-  Optional<PointEntity> findByUuid(UUID uuid);
 
   @Query(value = """
       SELECT * FROM points AS p
@@ -32,6 +28,4 @@ public interface PointRepository extends JpaRepository<PointEntity, Long> {
       Long streamId,
       List<Integer> branchNums,
       int depth);
-
-  boolean existsByBranchAndDepth(BranchEntity branch, int i);
 }
