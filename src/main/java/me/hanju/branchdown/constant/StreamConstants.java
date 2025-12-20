@@ -6,7 +6,6 @@ package me.hanju.branchdown.constant;
 public final class StreamConstants {
 
   private StreamConstants() {
-    // 유틸리티 클래스는 인스턴스화 방지
   }
 
   /** 루트 포인트의 depth */

@@ -1,5 +1,7 @@
 package me.hanju.branchdown.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,5 +62,32 @@ public class PointService {
     // 3. 포인트 추가
     return pointRepository.save(PointEntity.builder().branch(branch).depth(point.getDepth() + 1).itemId(itemId).build())
         .toResponse();
+  }
+
+  /**
+   * 특정 Point와 그 조상 Point들을 조회합니다.
+   * 같은 branch 경로 내에서 자신을 포함한 상위 depth의 Point들을 반환합니다.
+   * 루트 포인트는 제외됩니다.
+   *
+   * @param id 기준 Point의 ID
+   * @return 자신 포함 조상 Point 목록 (depth 오름차순, 루트 제외)
+   */
+  public List<PointDto.Response> getAncestors(Long id) {
+    PointEntity point = pointRepository.findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("Point not found"));
+
+    BranchEntity branch = point.getBranch();
+    Long streamId = branch.getStream().getId();
+
+    // branch의 path를 파싱하여 경로에 포함된 branchNum 목록 생성
+    List<Integer> branchNums = PathUtils.parsePath(branch.getPath());
+    branchNums.add(branch.getBranchNum());
+
+    List<PointEntity> ancestors = pointRepository.findAncestorsUsingPath(
+        streamId, branchNums, point.getDepth());
+
+    return ancestors.stream()
+        .map((PointEntity p) -> p.toResponse())
+        .toList();
   }
 }

@@ -82,9 +82,10 @@ open http://localhost:8083/docs
 
 #### Point API
 
-| Method | Endpoint                | 설명                                               |
-| ------ | ----------------------- | -------------------------------------------------- |
-| POST   | `/api/points/{id}/down` | Point 추가 (지정한 Point 아래에 추가, 브랜칭 포함) |
+| Method | Endpoint                     | 설명                                               |
+| ------ | ---------------------------- | -------------------------------------------------- |
+| POST   | `/api/points/{id}/down`      | Point 추가 (지정한 Point 아래에 추가, 브랜칭 포함) |
+| GET    | `/api/points/{id}/ancestors` | 조상 Point 조회 (자신 포함, 루트 제외)             |
 
 자세한 API 명세는 [DATABASE_DESIGN.md](DATABASE_DESIGN.md) 참조
 

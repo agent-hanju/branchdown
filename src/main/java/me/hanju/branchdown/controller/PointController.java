@@ -1,6 +1,9 @@
 package me.hanju.branchdown.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,6 +32,14 @@ public class PointController {
       @PathVariable Long id,
       @Valid @RequestBody PointDto.DownRequest request) {
     PointDto.Response response = pointService.pointDown(id, request.itemId());
+    return ResponseEntity.ok(CommonResponseDto.success(response));
+  }
+
+  @Operation(summary = "조상 포인트 조회", description = "지정한 포인트의 상위 depth에 있는 조상 포인트들을 조회합니다")
+  @GetMapping("/{id}/ancestors")
+  public ResponseEntity<CommonResponseDto<List<PointDto.Response>>> getAncestors(
+      @PathVariable Long id) {
+    List<PointDto.Response> response = pointService.getAncestors(id);
     return ResponseEntity.ok(CommonResponseDto.success(response));
   }
 }

@@ -3,6 +3,8 @@ package me.hanju.branchdown.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -343,6 +345,153 @@ class PointServiceIntegrationTest extends IntegrationTestBase {
           .findFirst()
           .orElseThrow();
       assertThat(branch2.getPath()).isEqualTo("0"); // branch 0에서 분기
+    }
+  }
+
+  @Nested
+  @DisplayName("getAncestors 메서드는")
+  class GetAncestorsTests {
+
+    @Test
+    @DisplayName("선형 브랜치에서 자신 포함 조상 포인트들을 반환한다 (루트 제외)")
+    void getAncestorsInLinearBranch() {
+      // Given - 스트림 생성 후 선형으로 포인트 추가
+      StreamDto.Response stream = streamService.createStream();
+
+      StreamEntity streamEntity = streamRepository.findById(stream.id()).orElseThrow();
+      PointEntity rootPoint = streamEntity.getBranches().get(0).getPoints().get(0);
+
+      // root(depth 0) -> msg1(depth 1) -> msg2(depth 2) -> msg3(depth 3)
+      PointDto.Response msg1 = pointService.pointDown(rootPoint.getId(), "msg1");
+      PointDto.Response msg2 = pointService.pointDown(msg1.id(), "msg2");
+      PointDto.Response msg3 = pointService.pointDown(msg2.id(), "msg3");
+
+      // When - msg3의 조상 조회
+      List<PointDto.Response> ancestors = pointService.getAncestors(msg3.id());
+
+      // Then - msg1, msg2, msg3가 depth 오름차순으로 반환되어야 함 (루트 제외, 자신 포함)
+      assertThat(ancestors).hasSize(3);
+      assertThat(ancestors.get(0).id()).isEqualTo(msg1.id()); // depth 1
+      assertThat(ancestors.get(1).id()).isEqualTo(msg2.id()); // depth 2
+      assertThat(ancestors.get(2).id()).isEqualTo(msg3.id()); // depth 3 (자기 자신)
+
+      // 루트 포인트는 제외되어야 함
+      assertThat(ancestors).noneMatch(a -> a.id().equals(rootPoint.getId()));
+    }
+
+    @Test
+    @DisplayName("루트 포인트의 조상 조회 시 빈 목록을 반환한다")
+    void getAncestorsOfRootPoint() {
+      // Given
+      StreamDto.Response stream = streamService.createStream();
+
+      StreamEntity streamEntity = streamRepository.findById(stream.id()).orElseThrow();
+      PointEntity rootPoint = streamEntity.getBranches().get(0).getPoints().get(0);
+
+      // When - 루트 포인트의 조상 조회
+      List<PointDto.Response> ancestors = pointService.getAncestors(rootPoint.getId());
+
+      // Then - 루트 포인트는 조상이 없으므로 빈 목록
+      assertThat(ancestors).isEmpty();
+    }
+
+    @Test
+    @DisplayName("depth 1 포인트는 자기 자신만 반환한다 (루트 제외)")
+    void getAncestorsOfDepth1Point() {
+      // Given
+      StreamDto.Response stream = streamService.createStream();
+
+      StreamEntity streamEntity = streamRepository.findById(stream.id()).orElseThrow();
+      PointEntity rootPoint = streamEntity.getBranches().get(0).getPoints().get(0);
+
+      PointDto.Response msg1 = pointService.pointDown(rootPoint.getId(), "msg1");
+
+      // When
+      List<PointDto.Response> ancestors = pointService.getAncestors(msg1.id());
+
+      // Then - 자기 자신만 포함 (루트 제외)
+      assertThat(ancestors).hasSize(1);
+      assertThat(ancestors.get(0).id()).isEqualTo(msg1.id());
+    }
+
+    @Test
+    @DisplayName("브랜치 분기 후에도 올바른 조상 경로를 따라간다 (루트 제외, 자신 포함)")
+    void getAncestorsAfterBranching() {
+      // Given
+      StreamDto.Response stream = streamService.createStream();
+
+      StreamEntity streamEntity = streamRepository.findById(stream.id()).orElseThrow();
+      PointEntity rootPoint = streamEntity.getBranches().get(0).getPoints().get(0);
+
+      // root -> msg1 -> msg2 (branch 0)
+      PointDto.Response msg1 = pointService.pointDown(rootPoint.getId(), "msg1");
+      PointDto.Response msg2 = pointService.pointDown(msg1.id(), "msg2");
+
+      // msg1에서 분기: msg1 -> altMsg2 (branch 1 생성)
+      PointDto.Response altMsg2 = pointService.pointDown(msg1.id(), "altMsg2");
+
+      // altMsg2에서 계속: altMsg2 -> altMsg3 (branch 1)
+      PointDto.Response altMsg3 = pointService.pointDown(altMsg2.id(), "altMsg3");
+
+      // When - altMsg3의 조상 조회 (branch 1 경로)
+      List<PointDto.Response> ancestors = pointService.getAncestors(altMsg3.id());
+
+      // Then - msg1(depth 1) -> altMsg2(depth 2) -> altMsg3(depth 3) (루트 제외, 자신 포함)
+      assertThat(ancestors).hasSize(3);
+      assertThat(ancestors.get(0).id()).isEqualTo(msg1.id());
+      assertThat(ancestors.get(1).id()).isEqualTo(altMsg2.id());
+      assertThat(ancestors.get(2).id()).isEqualTo(altMsg3.id());
+
+      // 루트와 msg2는 조상에 포함되지 않아야 함
+      assertThat(ancestors).noneMatch(a -> a.id().equals(rootPoint.getId()));
+      assertThat(ancestors).noneMatch(a -> a.id().equals(msg2.id()));
+    }
+
+    @Test
+    @DisplayName("다단계 브랜칭에서 올바른 조상 경로를 반환한다 (루트 제외, 자신 포함)")
+    void getAncestorsInMultiLevelBranching() {
+      // Given
+      StreamDto.Response stream = streamService.createStream();
+
+      StreamEntity streamEntity = streamRepository.findById(stream.id()).orElseThrow();
+      PointEntity rootPoint = streamEntity.getBranches().get(0).getPoints().get(0);
+
+      // root -> A -> A1 -> A1Child (branch 0)
+      PointDto.Response pointA = pointService.pointDown(rootPoint.getId(), "A");
+      PointDto.Response pointA1 = pointService.pointDown(pointA.id(), "A1");
+      PointDto.Response pointA1Child = pointService.pointDown(pointA1.id(), "A1-1");
+
+      // A에서 분기: A -> A2 (branch 1)
+      PointDto.Response pointA2 = pointService.pointDown(pointA.id(), "A2");
+
+      // A2에서 계속: A2 -> A2Child (branch 1)
+      PointDto.Response pointA2Child = pointService.pointDown(pointA2.id(), "A2-1");
+
+      // When - A2Child의 조상 조회
+      List<PointDto.Response> ancestors = pointService.getAncestors(pointA2Child.id());
+
+      // Then - A -> A2 -> A2Child (루트 제외, 자신 포함)
+      assertThat(ancestors).hasSize(3);
+      assertThat(ancestors.get(0).id()).isEqualTo(pointA.id());
+      assertThat(ancestors.get(1).id()).isEqualTo(pointA2.id());
+      assertThat(ancestors.get(2).id()).isEqualTo(pointA2Child.id());
+
+      // 루트, A1, A1Child는 조상에 포함되지 않아야 함
+      assertThat(ancestors).noneMatch(a -> a.id().equals(rootPoint.getId()));
+      assertThat(ancestors).noneMatch(a -> a.id().equals(pointA1.id()));
+      assertThat(ancestors).noneMatch(a -> a.id().equals(pointA1Child.id()));
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 포인트에 대해 예외를 발생시킨다")
+    void getAncestorsPointNotFound() {
+      // Given
+      Long nonExistentId = 999999L;
+
+      // When & Then
+      assertThatThrownBy(() -> pointService.getAncestors(nonExistentId))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessage("Point not found");
     }
   }
 }
