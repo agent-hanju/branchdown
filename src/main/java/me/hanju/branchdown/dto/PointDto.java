@@ -12,6 +12,7 @@ public class PointDto {
   public static record Response(
       Long id,
       Integer branchNum,
+      Integer depth,
       String itemId,
       List<Integer> childBranchNums,
       Instant createdAt) {

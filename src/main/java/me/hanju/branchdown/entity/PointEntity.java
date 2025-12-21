@@ -127,6 +127,6 @@ public class PointEntity {
   }
 
   public PointDto.Response toResponse() {
-    return new PointDto.Response(this.id, this.getBranchNum(), this.itemId, this.childBranchNums, this.createdAt);
+    return new PointDto.Response(this.id, this.getBranchNum(), this.depth, this.itemId, this.childBranchNums, this.createdAt);
   }
 }
