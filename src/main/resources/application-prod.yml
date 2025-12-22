@@ -1,5 +1,5 @@
 server:
-  port: 8083
+  port: ${SERVER_PORT:8070}
 
 spring:
   cloud:
@@ -8,39 +8,68 @@ spring:
       host: ${CONSUL_HOST}
       port: ${CONSUL_PORT}
       discovery:
+        enabled: ${CONSUL_ENABLED:false}
         service-name: branchdown
+        instance-id: ${DISCOVERY_HOST}:${SERVER_PORT:8070}
+        hostname: ${DISCOVERY_HOST}
+        port: ${SERVER_PORT:8070}
         health-check-path: /actuator/health
+        management-port: ${MANAGEMENT_PORT}
         health-check-interval: 10s
+        acl-token: ${CONSUL_ACL_TOKEN:}
+
   datasource:
-    url: ${MARIADB_URL:jdbc:mariadb://mariadb:3306/branchdown_db}
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: ${MARIADB_URL}
     username: ${MARIADB_USER}
     password: ${MARIADB_PASSWORD}
-    driver-class-name: org.mariadb.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: BranchdownHikariPool
+      leak-detection-threshold: 60000
+
   jpa:
+    database-platform: org.hibernate.dialect.MariaDBDialect
     hibernate:
       ddl-auto: validate
+    show-sql: false
     properties:
       hibernate:
-        '[show_sql]': false
         '[format_sql]': false
+        '[use_sql_comments]': false
+      jdbc:
+        '[batch_size]': 50
+        '[order_inserts]': true
+        '[order_updates]': true
 
-management:
-  server:
-    port: 8084
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-        exclude: heapdump,threaddump,env,configprops
-  endpoint:
-    health:
-      show-details: when-authorized
+hanju:
+  jwt:
+    validator:
+      enabled: true
+      secret-key: ${JWT_SECRET_KEY}
+      issuer: ${JWT_ISSUER:lexai-issuer}
 
 springdoc:
   api-docs:
     enabled: false
   swagger-ui:
     enabled: false
+
+management:
+  server:
+    port: ${MANAGEMENT_PORT:8071}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+        exclude: heapdump,threaddump,env,configprops
+  endpoint:
+    health:
+      show-details: when-authorized
 
 logging:
   level:
@@ -54,9 +83,16 @@ logging:
           jdbc:
             bind: WARN
   file:
-    name: /var/log/branchdown/application.log
-    max-size: 100MB
-    max-history: 30
+    name: /app/logs/application.log
+  logback:
+    rollingpolicy:
+      max-file-size: 100MB
+      max-history: 30
   pattern:
     file: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
     console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
+# Observability (Loki, Tempo)
+# loki:
+#   url: ${LOKI_URL:}
+# tempo:
+#   endpoint: ${TEMPO_ENDPOINT:}

@@ -1,5 +1,5 @@
 server:
-  port: ${SERVER_PORT:8083}
+  port: ${SERVER_PORT:8070}
   shutdown: graceful
 
 spring:
@@ -17,11 +17,12 @@ spring:
         '[show_sql]': true
         '[format_sql]': true
         '[default_batch_fetch_size]': 16
+        time-zone: ${TZ:Asia/Seoul}
     open-in-view: false
 
 management:
   server:
-    port: ${MANAGEMENT_PORT:8091}
+    port: ${MANAGEMENT_PORT:8071}
 
 springdoc:
   swagger-ui:

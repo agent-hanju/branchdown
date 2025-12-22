@@ -1,21 +1,55 @@
+# Multi-stage build for optimized Docker image
+# Stage 1: Build
 FROM eclipse-temurin:21-jdk-jammy AS builder
+
 WORKDIR /workspace
+
+# Copy Gradle wrapper and build files
 COPY gradle gradle
 COPY gradlew .
 COPY settings.gradle .
 COPY build.gradle .
-RUN chmod +x gradlew
+
+# Fix Windows line endings and grant execution permission
+RUN sed -i 's/\r$//' gradlew && chmod +x gradlew
+
+# Download dependencies for better layer caching
 RUN ./gradlew dependencies --no-daemon || true
+
+# Copy source code
 COPY src src
+
+# Build the application
 RUN ./gradlew bootJar -x test --no-daemon
 
+# Stage 2: Runtime
 FROM eclipse-temurin:21-jre-jammy
+
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/* \
-    && groupadd -r branchdown && useradd -r -g branchdown branchdown
+
+# Install curl for health checks and create non-root user
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd -r app && useradd -r -g app app
+
+# Copy the jar file from builder stage
 COPY --from=builder /workspace/build/libs/*.jar app.jar
-RUN chown -R branchdown:branchdown /app
-USER branchdown:branchdown
-EXPOSE 8083 8084
+
+# Create log directory and set ownership
+RUN mkdir -p /app/logs && chown -R app:app /app
+
+# Switch to non-root user
+USER app:app
+
+# Expose ports (server, management)
+EXPOSE 8070 8071
+
+# Set JVM options for containerized environment
 ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0"
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar --spring.profiles.active=prod"]
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8071/actuator/health || exit 1
+
+# Run the application
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
