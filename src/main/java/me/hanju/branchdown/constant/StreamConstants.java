@@ -1,8 +1,6 @@
 package me.hanju.branchdown.constant;
 
-/**
- * Stream 관련 상수
- */
+/** Stream 관련 상수 */
 public final class StreamConstants {
 
   private StreamConstants() {

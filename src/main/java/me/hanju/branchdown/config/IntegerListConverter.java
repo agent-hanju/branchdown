@@ -8,10 +8,7 @@ import java.util.stream.Collectors;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
-/**
- * Integer 리스트를 쉼표로 구분된 문자열로 변환하는 JPA Converter
- * 브랜치 번호 목록 저장에 사용
- */
+/** Integer 리스트를 쉼표로 구분된 문자열로 변환하는 JPA Converter */
 @Converter
 public class IntegerListConverter implements AttributeConverter<List<Integer>, String> {
 
@@ -29,13 +26,13 @@ public class IntegerListConverter implements AttributeConverter<List<Integer>, S
 
   @Override
   public List<Integer> convertToEntityAttribute(String dbData) {
-    if (dbData == null || dbData.trim().isEmpty()) {
+    if (dbData == null || dbData.strip().isEmpty()) {
       return new ArrayList<>();
     }
     return Arrays.stream(dbData.split(DELIMITER))
-        .map(String::trim)
+        .map(String::strip)
         .filter(s -> !s.isEmpty())
         .map(Integer::valueOf)
-        .collect(Collectors.toList());
+        .toList();
   }
 }

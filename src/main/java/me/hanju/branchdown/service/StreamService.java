@@ -2,15 +2,16 @@ package me.hanju.branchdown.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.hanju.branchdown.api.dto.PointDto;
+import me.hanju.branchdown.api.dto.StreamDto;
 import me.hanju.branchdown.constant.StreamConstants;
-import me.hanju.branchdown.dto.PointDto;
-import me.hanju.branchdown.dto.StreamDto;
 import me.hanju.branchdown.entity.BranchEntity;
 import me.hanju.branchdown.entity.PointEntity;
 import me.hanju.branchdown.entity.StreamEntity;
@@ -59,14 +60,14 @@ public class StreamService {
   public StreamDto.Response getStream(Long id) {
     StreamEntity stream = streamRepository
         .findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("Stream not found"));
+        .orElseThrow(() -> new NoSuchElementException("Stream not found"));
     return stream.toResponse();
   }
 
   @Transactional
   public void deleteStream(Long id) {
     StreamEntity stream = streamRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("Stream not found"));
+        .orElseThrow(() -> new NoSuchElementException("Stream not found"));
     streamRepository.delete(stream);
   }
 
@@ -75,10 +76,10 @@ public class StreamService {
    */
   public List<PointDto.Response> getStreamPoints(Long id) {
     StreamEntity stream = streamRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("Stream not found"));
+        .orElseThrow(() -> new NoSuchElementException("Stream not found"));
     BranchEntity latestBranch = branchRepository
         .findLatestBranchInChat(stream)
-        .orElseThrow(() -> new RuntimeException("Latest Branch not found"));
+        .orElseThrow(() -> new IllegalStateException("Latest Branch not found"));
 
     // path를 Integer List로 변경
     List<Integer> branchNums = PathUtils.parsePath(latestBranch.getPath());
@@ -91,7 +92,7 @@ public class StreamService {
 
   public List<PointDto.Response> getBranchMessages(Long id, int branchNum, int depth) {
     StreamEntity stream = streamRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("Stream not found"));
+        .orElseThrow(() -> new NoSuchElementException("Stream not found"));
 
     BranchEntity branch = branchRepository
         .findById(new BranchId(stream.getId(), branchNum))

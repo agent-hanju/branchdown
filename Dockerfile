@@ -42,14 +42,15 @@ RUN mkdir -p /app/logs && chown -R app:app /app
 USER app:app
 
 # Expose ports (server, management)
-EXPOSE 8070 8071
+EXPOSE 8080 8081
 
-# Set JVM options for containerized environment
+# Set environment variables
+ENV SPRING_PROFILES_ACTIVE=prod
 ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0"
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:8071/actuator/health || exit 1
+    CMD curl -f http://localhost:8081/actuator/health || exit 1
 
 # Run the application
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

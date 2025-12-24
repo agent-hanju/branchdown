@@ -10,9 +10,7 @@ import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * JPA Converter for Map<String, Object> to JSON string
- */
+/** Map<String, Object>을 JSON 문자열로 변환하는 JPA Converter */
 @Slf4j
 @Converter
 public class JsonConverter implements AttributeConverter<Map<String, Object>, String> {
@@ -28,7 +26,7 @@ public class JsonConverter implements AttributeConverter<Map<String, Object>, St
       return objectMapper.writeValueAsString(attribute);
     } catch (JsonProcessingException e) {
       log.error("Failed to convert Map to JSON string", e);
-      throw new IllegalArgumentException("Error converting Map to JSON", e);
+      throw new IllegalStateException("Error converting Map to JSON", e);
     }
   }
 
@@ -42,7 +40,7 @@ public class JsonConverter implements AttributeConverter<Map<String, Object>, St
       });
     } catch (JsonProcessingException e) {
       log.error("Failed to convert JSON string to Map", e);
-      throw new IllegalArgumentException("Error converting JSON to Map", e);
+      throw new IllegalStateException("Error converting JSON to Map", e);
     }
   }
 }

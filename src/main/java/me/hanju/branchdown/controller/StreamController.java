@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import me.hanju.branchdown.dto.CommonResponseDto;
-import me.hanju.branchdown.dto.PointDto;
-import me.hanju.branchdown.dto.StreamDto;
+import me.hanju.branchdown.api.dto.CommonResponseDto;
+import me.hanju.branchdown.api.dto.PointDto;
+import me.hanju.branchdown.api.dto.StreamDto;
 import me.hanju.branchdown.service.StreamService;
 
 @Tag(name = "Stream", description = "스트림 관리 API")

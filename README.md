@@ -48,8 +48,8 @@ cd branchdown
 ./gradlew bootTestRun
 
 # 동작 확인
-curl http://localhost:8083/actuator/health
-open http://localhost:8083/docs
+curl http://localhost:8081/actuator/health
+open http://localhost:8080/docs
 ```
 
 ### 테스트 실행
@@ -65,8 +65,8 @@ open http://localhost:8083/docs
 
 ### Swagger UI
 
-- **URL**: http://localhost:8083/docs
-- **API Docs**: http://localhost:8083/api-docs
+- **URL**: http://localhost:8080/docs
+- **API Docs**: http://localhost:8080/v3/api-docs
 
 ### 주요 엔드포인트
 
@@ -141,16 +141,17 @@ services:
   branchdown:
     build: .
     ports:
-      - '8083:8083'
-      - '8084:8084'
+      - '8080:8080'
+      - '8081:8081'
     environment:
+      SPRING_PROFILES_ACTIVE: prod
       MARIADB_URL: jdbc:mariadb://mariadb:3306/${MARIADB_DATABASE}
       MARIADB_USER: ${MARIADB_USER}
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      # DDL_AUTO: update (기본값) | validate | none
       # Consul (선택)
-      CONSUL_ENABLED: false
+      # CONSUL_ENABLED: true
       # CONSUL_HOST: consul
-      # CONSUL_PORT: 8500
     depends_on:
       mariadb:
         condition: service_healthy
@@ -184,16 +185,59 @@ MARIADB_USER=branchdown
 MARIADB_PASSWORD=your_app_password
 ```
 
+### 주요 환경변수
+
+| 환경변수 | 기본값 | 설명 |
+| -------- | ------ | ---- |
+| `DDL_AUTO` | `update` | Hibernate DDL 전략 (`update`, `validate`, `none`) |
+| `CONSUL_ENABLED` | `false` | Consul Discovery 활성화 여부 |
+| `CONSUL_HOST` | `localhost` | Consul 서버 호스트 |
+
 **운영 환경 특징:**
 
+- `ddl-auto: update` (스키마 자동 업데이트, 필요 시 `validate`로 변경)
 - Swagger UI 비활성화
-- Actuator 포트 분리 (8084) 및 엔드포인트 제한
+- Actuator 포트 분리 (8081) 및 엔드포인트 제한
 - SQL 로깅 비활성화
+
+## 관련 프로젝트
+
+| 프로젝트                                                              | 설명                                                |
+| --------------------------------------------------------------------- | --------------------------------------------------- |
+| [branchdown-api](https://github.com/agent-hanju/branchdown-api)       | 공유 DTO 라이브러리 (`PointDto`, `StreamDto` 등)    |
+| [branchdown-client](https://github.com/agent-hanju/branchdown-client) | Java 클라이언트 라이브러리 (WebClient, OkHttp 지원) |
+
+### 클라이언트 사용 예시
+
+```gradle
+// build.gradle
+implementation 'com.github.agent-hanju:branchdown-client:0.2.2'
+```
+
+```java
+// Bean 등록
+@Bean
+BranchdownClient branchdownClient(WebClient.Builder builder) {
+    return new WebClientBranchdownClient(builder, "http://branchdown:8080");
+}
+
+// 사용
+StreamDto.Response stream = branchdownClient.createStream();
+PointDto.Response point = branchdownClient.addPoint(parentPointId, "item-uuid");
+List<PointDto.Response> ancestors = branchdownClient.getAncestors(pointId);
+```
+
+## 변경 이력
+
+### v0.2.2
+
+- 주요 DTO (`PointDto`, `StreamDto`)를 [branchdown-api](https://github.com/agent-hanju/branchdown-api)로 이전
+- 클라이언트 라이브러리 [branchdown-client](https://github.com/agent-hanju/branchdown-client) 분리
 
 ## 문서
 
 - **[DATABASE_DESIGN.md](DATABASE_DESIGN.md)** - 데이터베이스 설계 (테이블 명세)
-- **[Swagger UI](http://localhost:8083/docs)** - API 문서 (실행 중일 때)
+- **[Swagger UI](http://localhost:8080/docs)** - API 문서 (실행 중일 때)
 
 ---
 

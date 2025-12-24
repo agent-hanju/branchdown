@@ -1,13 +1,14 @@
 package me.hanju.branchdown.service;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import me.hanju.branchdown.dto.PointDto;
+import me.hanju.branchdown.api.dto.PointDto;
 import me.hanju.branchdown.entity.BranchEntity;
 import me.hanju.branchdown.entity.PointEntity;
 import me.hanju.branchdown.entity.StreamEntity;
@@ -36,7 +37,7 @@ public class PointService {
   public PointDto.Response pointDown(Long id, String itemId) {
     // 1. 기준 포인트 확인
     PointEntity point = pointRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("Point not found"));
+        .orElseThrow(() -> new NoSuchElementException("Point not found"));
 
     // 2. 브랜치 상태 확인
     BranchEntity branch;
@@ -74,7 +75,7 @@ public class PointService {
    */
   public List<PointDto.Response> getAncestors(Long id) {
     PointEntity point = pointRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("Point not found"));
+        .orElseThrow(() -> new NoSuchElementException("Point not found"));
 
     BranchEntity branch = point.getBranch();
     Long streamId = branch.getStream().getId();
@@ -86,8 +87,6 @@ public class PointService {
     List<PointEntity> ancestors = pointRepository.findAncestorsUsingPath(
         streamId, branchNums, point.getDepth());
 
-    return ancestors.stream()
-        .map((PointEntity p) -> p.toResponse())
-        .toList();
+    return ancestors.stream().map(PointEntity::toResponse).toList();
   }
 }

@@ -33,8 +33,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import me.hanju.branchdown.api.dto.PointDto;
 import me.hanju.branchdown.config.IntegerListConverter;
-import me.hanju.branchdown.dto.PointDto;
 
 /** 하나의 포인트를 지정하는 엔티티 */
 @Builder
@@ -109,7 +109,7 @@ public class PointEntity {
 
   /** 이 포인트 아래로 이어지는 브랜치의 branchNum */
   @Builder.Default
-  @Column(name = "child_branch_nums", length = 256)
+  @Column(name = "child_branch_nums", nullable = false)
   @Convert(converter = IntegerListConverter.class)
   @Comment("이 포인트를 베이스로 하는 branch_num 목록(쉼표로 구분)")
   private List<Integer> childBranchNums = new ArrayList<>();
@@ -127,6 +127,7 @@ public class PointEntity {
   }
 
   public PointDto.Response toResponse() {
-    return new PointDto.Response(this.id, this.getBranchNum(), this.depth, this.itemId, this.childBranchNums, this.createdAt);
+    return new PointDto.Response(this.id, this.getBranchNum(), this.depth, this.itemId, this.childBranchNums,
+        this.createdAt);
   }
 }

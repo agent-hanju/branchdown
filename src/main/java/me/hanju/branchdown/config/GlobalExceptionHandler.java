@@ -2,6 +2,7 @@ package me.hanju.branchdown.config;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,30 +10,36 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import lombok.extern.slf4j.Slf4j;
-import me.hanju.branchdown.dto.CommonResponseDto;
+import me.hanju.branchdown.api.dto.CommonResponseDto;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+  @ExceptionHandler(NoSuchElementException.class)
+  public ResponseEntity<CommonResponseDto<Void>> handleNoSuchElementException(NoSuchElementException e) {
+    log.warn("NoSuchElementException: {}", e.getMessage());
+    return ResponseEntity
+        .status(HttpStatus.NOT_FOUND)
+        .body(CommonResponseDto.error(e.getMessage()));
+  }
+
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<CommonResponseDto<Void>> handleIllegalArgumentException(IllegalArgumentException e) {
-    log.error("IllegalArgumentException: {}", e.getMessage());
+    log.warn("IllegalArgumentException: {}", e.getMessage());
     return ResponseEntity
         .status(HttpStatus.BAD_REQUEST)
         .body(CommonResponseDto.error(e.getMessage()));
   }
 
-  @ExceptionHandler(MaxUploadSizeExceededException.class)
-  public ResponseEntity<CommonResponseDto<Void>> handleMaxUploadSizeExceededException(
-      MaxUploadSizeExceededException e) {
-    log.error("MaxUploadSizeExceededException: {}", e.getMessage());
+  @ExceptionHandler(IllegalStateException.class)
+  public ResponseEntity<CommonResponseDto<Void>> handleIllegalStateException(IllegalStateException e) {
+    log.error("IllegalStateException: {}", e.getMessage());
     return ResponseEntity
-        .status(HttpStatus.PAYLOAD_TOO_LARGE)
-        .body(CommonResponseDto.error("File size exceeds maximum limit"));
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .body(CommonResponseDto.error(e.getMessage()));
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)

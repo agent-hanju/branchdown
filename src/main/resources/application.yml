@@ -1,5 +1,5 @@
 server:
-  port: ${SERVER_PORT:8070}
+  port: ${SERVER_PORT:8080}
   shutdown: graceful
 
 spring:
@@ -11,18 +11,17 @@ spring:
       enabled: false
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: create-drop
+    show-sql: true
     properties:
       hibernate:
-        '[show_sql]': true
         '[format_sql]': true
-        '[default_batch_fetch_size]': 16
-        time-zone: ${TZ:Asia/Seoul}
+        time-zone: ${TZ:UTC}
     open-in-view: false
 
 management:
   server:
-    port: ${MANAGEMENT_PORT:8071}
+    port: ${MANAGEMENT_PORT:8081}
 
 springdoc:
   swagger-ui:

@@ -1,67 +1,38 @@
-server:
-  port: ${SERVER_PORT:8070}
-
 spring:
   cloud:
     consul:
       enabled: ${CONSUL_ENABLED:false}
-      host: ${CONSUL_HOST}
-      port: ${CONSUL_PORT}
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
       discovery:
         enabled: ${CONSUL_ENABLED:false}
         service-name: branchdown
-        instance-id: ${DISCOVERY_HOST}:${SERVER_PORT:8070}
-        hostname: ${DISCOVERY_HOST}
-        port: ${SERVER_PORT:8070}
+        instance-id: ${DISCOVERY_HOST:localhost}:${SERVER_PORT:8080}
+        hostname: ${DISCOVERY_HOST:localhost}
+        port: ${SERVER_PORT:8080}
         health-check-path: /actuator/health
-        management-port: ${MANAGEMENT_PORT}
+        management-port: ${MANAGEMENT_PORT:8081}
         health-check-interval: 10s
         acl-token: ${CONSUL_ACL_TOKEN:}
-
   datasource:
-    driver-class-name: org.mariadb.jdbc.Driver
     url: ${MARIADB_URL}
     username: ${MARIADB_USER}
     password: ${MARIADB_PASSWORD}
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
-      pool-name: BranchdownHikariPool
-      leak-detection-threshold: 60000
-
   jpa:
-    database-platform: org.hibernate.dialect.MariaDBDialect
     hibernate:
-      ddl-auto: validate
+      ddl-auto: ${DDL_AUTO:update}
     show-sql: false
     properties:
       hibernate:
         '[format_sql]': false
-        '[use_sql_comments]': false
-      jdbc:
-        '[batch_size]': 50
-        '[order_inserts]': true
-        '[order_updates]': true
-
-hanju:
-  jwt:
-    validator:
-      enabled: true
-      secret-key: ${JWT_SECRET_KEY}
-      issuer: ${JWT_ISSUER:lexai-issuer}
 
 springdoc:
-  api-docs:
-    enabled: false
   swagger-ui:
+    enabled: false
+  api-docs:
     enabled: false
 
 management:
-  server:
-    port: ${MANAGEMENT_PORT:8071}
   endpoints:
     web:
       exposure:
@@ -91,8 +62,3 @@ logging:
   pattern:
     file: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
     console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
-# Observability (Loki, Tempo)
-# loki:
-#   url: ${LOKI_URL:}
-# tempo:
-#   endpoint: ${TEMPO_ENDPOINT:}

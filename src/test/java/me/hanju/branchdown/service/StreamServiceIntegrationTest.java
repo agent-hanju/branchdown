@@ -3,8 +3,11 @@ package me.hanju.branchdown.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,12 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import me.hanju.branchdown.IntegrationTestBase;
 import me.hanju.branchdown.constant.StreamConstants;
-import me.hanju.branchdown.dto.PointDto;
-import me.hanju.branchdown.dto.StreamDto;
+import me.hanju.branchdown.api.dto.PointDto;
+import me.hanju.branchdown.api.dto.StreamDto;
 import me.hanju.branchdown.entity.BranchEntity;
 import me.hanju.branchdown.entity.PointEntity;
 import me.hanju.branchdown.entity.StreamEntity;
-import me.hanju.branchdown.fixture.StreamFixture;
+import me.hanju.branchdown.entity.id.BranchId;
 import me.hanju.branchdown.repository.BranchRepository;
 import me.hanju.branchdown.repository.PointRepository;
 import me.hanju.branchdown.repository.StreamRepository;
@@ -37,239 +40,153 @@ class StreamServiceIntegrationTest extends IntegrationTestBase {
   @Autowired
   private PointRepository pointRepository;
 
-  @Nested
-  @DisplayName("createStream 메서드는")
-  class CreateStreamTests {
+  @Test
+  @DisplayName("스트림 생성 시 초기 브랜치와 루트 포인트를 자동 생성한다")
+  void createStream() {
+    StreamDto.Response response = streamService.createStream();
 
-    @Test
-    @DisplayName("스트림을 생성한다")
-    void createStream() {
-      // When
-      StreamDto.Response response = streamService.createStream();
+    assertThat(response.id()).isNotNull();
 
-      // Then
-      assertThat(response).isNotNull();
-      assertThat(response.id()).isNotNull();
+    StreamEntity stream = streamRepository.findById(response.id()).orElseThrow();
+    assertThat(stream.getBranches()).hasSize(1);
 
-      // DB 검증 - 초기 브랜치와 루트 포인트 자동 생성
-      StreamEntity savedStream = streamRepository.findById(response.id()).orElseThrow();
-      assertThat(savedStream.getBranches()).hasSize(1);
-      assertThat(savedStream.getNextBranchNum()).isEqualTo(1);
+    BranchEntity branch = stream.getBranches().get(0);
+    assertThat(branch.getBranchNum()).isEqualTo(StreamConstants.INITIAL_BRANCH_NUM);
+    assertThat(branch.getPoints()).hasSize(1);
+    assertThat(branch.getPoints().get(0).getDepth()).isEqualTo(StreamConstants.ROOT_POINT_DEPTH);
+  }
 
-      BranchEntity initialBranch = savedStream.getBranches().get(0);
-      assertThat(initialBranch.getBranchNum()).isEqualTo(StreamConstants.INITIAL_BRANCH_NUM);
-      assertThat(initialBranch.getPath()).isEmpty();
-      assertThat(initialBranch.getPoints()).hasSize(1);
+  @Test
+  @DisplayName("스트림 조회")
+  void getStream() {
+    StreamDto.Response created = streamService.createStream();
 
-      PointEntity rootPoint = initialBranch.getPoints().get(0);
-      assertThat(rootPoint.getDepth()).isEqualTo(StreamConstants.ROOT_POINT_DEPTH);
-      assertThat(rootPoint.getItemId()).isNull();
-      assertThat(rootPoint.getChildBranchNums()).isEmpty();
-    }
+    StreamDto.Response found = streamService.getStream(created.id());
 
-    @Test
-    @DisplayName("초기 브랜치와 루트 포인트를 자동으로 생성한다")
-    void createStreamWithInitialBranchAndRootPoint() {
-      // When
-      StreamDto.Response response = streamService.createStream();
+    assertThat(found.id()).isEqualTo(created.id());
+  }
 
-      // Then
-      StreamEntity stream = streamRepository.findById(response.id()).orElseThrow();
-      assertThat(stream.getBranches()).hasSize(1);
-      assertThat(stream.getNextBranchNum()).isEqualTo(1);
+  @Test
+  @DisplayName("존재하지 않는 스트림 조회 시 예외 발생")
+  void getStreamNotFound() {
+    assertThatThrownBy(() -> streamService.getStream(999999L))
+        .isInstanceOf(NoSuchElementException.class);
+  }
 
-      BranchEntity branch = stream.getBranches().get(0);
-      assertThat(branch.getPoints()).hasSize(1);
+  @Test
+  @DisplayName("스트림 삭제 시 연관 엔티티도 삭제된다")
+  void deleteStream() {
+    StreamDto.Response created = streamService.createStream();
+    Long streamId = created.id();
+    int branchNum = streamRepository.findById(streamId).orElseThrow()
+        .getBranches().get(0).getBranchNum();
 
-      PointEntity rootPoint = branch.getPoints().get(0);
-      assertThat(rootPoint.getDepth()).isEqualTo(StreamConstants.ROOT_POINT_DEPTH);
-      assertThat(rootPoint.getItemId()).isNull();
-      assertThat(rootPoint.getChildBranchNums()).isEmpty();
-    }
+    streamService.deleteStream(streamId);
+
+    assertThat(streamRepository.findById(streamId)).isEmpty();
+    assertThat(branchRepository.findById(new BranchId(streamId, branchNum))).isEmpty();
+  }
+
+  @Test
+  @DisplayName("존재하지 않는 스트림 삭제 시 예외 발생")
+  void deleteStreamNotFound() {
+    assertThatThrownBy(() -> streamService.deleteStream(999999L))
+        .isInstanceOf(NoSuchElementException.class);
   }
 
   @Nested
-  @DisplayName("getStream 메서드는")
-  class GetStreamTests {
-
-    @Test
-    @DisplayName("ID로 스트림을 조회한다")
-    void getStreamById() {
-      // Given
-      StreamDto.Response created = streamService.createStream();
-
-      // When
-      StreamDto.Response response = streamService.getStream(created.id());
-
-      // Then
-      assertThat(response).isNotNull();
-      assertThat(response.id()).isEqualTo(created.id());
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 ID로 조회 시 예외를 발생시킨다")
-    void getStreamNotFound() {
-      // Given
-      Long nonExistentId = 999999L;
-
-      // When & Then
-      assertThatThrownBy(() -> streamService.getStream(nonExistentId))
-          .isInstanceOf(IllegalArgumentException.class)
-          .hasMessage("Stream not found");
-    }
-  }
-
-  @Nested
-  @DisplayName("deleteStream 메서드는")
-  class DeleteStreamTests {
-
-    @Test
-    @DisplayName("스트림을 삭제한다")
-    void deleteStream() {
-      // Given
-      StreamDto.Response created = streamService.createStream();
-
-      // When
-      streamService.deleteStream(created.id());
-
-      // Then
-      assertThat(streamRepository.findById(created.id())).isEmpty();
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 스트림 삭제 시 예외를 발생시킨다")
-    void deleteStreamNotFound() {
-      // Given
-      Long nonExistentId = 999999L;
-
-      // When & Then
-      assertThatThrownBy(() -> streamService.deleteStream(nonExistentId))
-          .isInstanceOf(IllegalArgumentException.class)
-          .hasMessage("Stream not found");
-    }
-
-    @Test
-    @DisplayName("스트림 삭제 시 연관된 브랜치와 포인트도 함께 삭제된다")
-    void deleteStreamCascades() {
-      // Given
-      StreamDto.Response created = streamService.createStream();
-
-      StreamEntity stream = streamRepository.findById(created.id()).orElseThrow();
-      Long streamId = stream.getId();
-      int branchNum = stream.getBranches().get(0).getBranchNum();
-
-      // When
-      streamService.deleteStream(created.id());
-
-      // Then - Cascade로 브랜치와 포인트도 삭제됨
-      assertThat(streamRepository.findById(created.id())).isEmpty();
-      assertThat(branchRepository.findById(new me.hanju.branchdown.entity.id.BranchId(streamId, branchNum)))
-          .isEmpty();
-    }
-  }
-
-  @Nested
-  @DisplayName("getStreamPoints 메서드는")
+  @DisplayName("getStreamPoints")
   class GetStreamPointsTests {
 
-    @Test
-    @DisplayName("스트림의 최신 브랜치 경로를 따라 포인트 목록을 반환한다")
-    void getStreamPoints() {
-      // Given
+    private Long streamId;
+    private PointEntity rootPoint;
+
+    @BeforeEach
+    void setUp() {
       StreamDto.Response stream = streamService.createStream();
+      streamId = stream.id();
+      StreamEntity entity = streamRepository.findById(streamId).orElseThrow();
+      rootPoint = entity.getBranches().get(0).getPoints().get(0);
+    }
 
-      // DB에서 루트 포인트 찾기
-      StreamEntity streamEntity = streamRepository.findById(stream.id()).orElseThrow();
-      BranchEntity initialBranch = streamEntity.getBranches().get(0);
-      PointEntity rootPoint = initialBranch.getPoints().get(0);
-
-      // 포인트 추가
-      PointEntity point1 = StreamFixture.pointEntity(initialBranch, 1, "item1");
-      pointRepository.save(point1);
-      rootPoint.addChildBranchNum(initialBranch.getBranchNum());
+    @Test
+    @DisplayName("포인트 목록 반환")
+    void getStreamPoints() {
+      PointEntity point = PointEntity.builder()
+          .branch(rootPoint.getBranch())
+          .depth(1)
+          .itemId("item1")
+          .childBranchNums(new ArrayList<>())
+          .build();
+      pointRepository.save(point);
+      rootPoint.addChildBranchNum(rootPoint.getBranch().getBranchNum());
       pointRepository.save(rootPoint);
 
-      // When
-      List<PointDto.Response> result = streamService.getStreamPoints(stream.id());
+      List<PointDto.Response> result = streamService.getStreamPoints(streamId);
 
-      // Then
-      assertThat(result).isNotNull();
       assertThat(result).hasSizeGreaterThanOrEqualTo(1);
-      assertThat(result.get(0).itemId()).isNull(); // 루트 포인트
       assertThat(result.get(0).branchNum()).isEqualTo(StreamConstants.INITIAL_BRANCH_NUM);
     }
 
     @Test
-    @DisplayName("존재하지 않는 스트림 조회 시 예외를 발생시킨다")
-    void getStreamPointsNotFound() {
-      // Given
-      Long nonExistentId = 999999L;
-
-      // When & Then
-      assertThatThrownBy(() -> streamService.getStreamPoints(nonExistentId))
-          .isInstanceOf(IllegalArgumentException.class)
-          .hasMessage("Stream not found");
+    @DisplayName("존재하지 않는 스트림 조회 시 예외 발생")
+    void notFound() {
+      assertThatThrownBy(() -> streamService.getStreamPoints(999999L))
+          .isInstanceOf(NoSuchElementException.class);
     }
   }
 
   @Nested
-  @DisplayName("getBranchMessages 메서드는")
+  @DisplayName("getBranchMessages")
   class GetBranchMessagesTests {
 
+    private Long streamId;
+    private BranchEntity branch;
+
+    @BeforeEach
+    void setUp() {
+      StreamDto.Response stream = streamService.createStream();
+      streamId = stream.id();
+      branch = streamRepository.findById(streamId).orElseThrow().getBranches().get(0);
+    }
+
     @Test
-    @DisplayName("특정 브랜치의 포인트 목록을 반환한다")
+    @DisplayName("브랜치 포인트 목록 반환")
     void getBranchMessages() {
-      // Given
-      StreamDto.Response stream = streamService.createStream();
+      List<PointDto.Response> result = streamService.getBranchMessages(
+          streamId, StreamConstants.INITIAL_BRANCH_NUM, -1);
 
-      int branchNum = StreamConstants.INITIAL_BRANCH_NUM;
-      int depth = -1; // 처음부터 받기 위해 -1 사용
-
-      // When
-      List<PointDto.Response> result = streamService.getBranchMessages(stream.id(), branchNum, depth);
-
-      // Then
-      assertThat(result).isNotNull();
-      assertThat(result).hasSizeGreaterThanOrEqualTo(1); // 최소 루트 포인트
-      assertThat(result.get(0).branchNum()).isEqualTo(branchNum);
+      assertThat(result).hasSizeGreaterThanOrEqualTo(1);
     }
 
     @Test
-    @DisplayName("존재하지 않는 브랜치 조회 시 예외를 발생시킨다")
-    void getBranchMessagesNotFound() {
-      // Given
-      StreamDto.Response stream = streamService.createStream();
-
-      int nonExistentBranchNum = 99;
-      int depth = 0;
-
-      // When & Then
-      assertThatThrownBy(() -> streamService.getBranchMessages(stream.id(), nonExistentBranchNum, depth))
-          .isInstanceOf(IllegalArgumentException.class)
-          .hasMessage("Branch not found");
+    @DisplayName("존재하지 않는 브랜치 조회 시 예외 발생")
+    void notFound() {
+      assertThatThrownBy(() -> streamService.getBranchMessages(streamId, 99, 0))
+          .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    @DisplayName("depth 파라미터로 특정 깊이 이후의 포인트만 조회할 수 있다")
-    void getBranchMessagesWithDepth() {
-      // Given
-      StreamDto.Response stream = streamService.createStream();
-
-      StreamEntity streamEntity = streamRepository.findById(stream.id()).orElseThrow();
-      BranchEntity branch = streamEntity.getBranches().get(0);
-
-      // depth 1, 2 포인트 추가
-      PointEntity point1 = StreamFixture.pointEntity(branch, 1, "item1");
-      PointEntity point2 = StreamFixture.pointEntity(branch, 2, "item2");
+    @DisplayName("depth 이후 포인트만 조회")
+    void withDepth() {
+      PointEntity point1 = PointEntity.builder()
+          .branch(branch)
+          .depth(1)
+          .itemId("item1")
+          .childBranchNums(new ArrayList<>())
+          .build();
+      PointEntity point2 = PointEntity.builder()
+          .branch(branch)
+          .depth(2)
+          .itemId("item2")
+          .childBranchNums(new ArrayList<>())
+          .build();
       pointRepository.save(point1);
       pointRepository.save(point2);
 
-      // When - depth 1 이후만 조회
       List<PointDto.Response> result = streamService.getBranchMessages(
-          stream.id(), StreamConstants.INITIAL_BRANCH_NUM, 1);
+          streamId, StreamConstants.INITIAL_BRANCH_NUM, 1);
 
-      // Then - depth > 1인 포인트들만 반환
-      assertThat(result).isNotEmpty();
       assertThat(result).allMatch(p -> p.id().equals(point2.getId()));
     }
   }

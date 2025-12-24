@@ -28,7 +28,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import me.hanju.branchdown.dto.StreamDto;
+import me.hanju.branchdown.api.dto.StreamDto;
 
 /** 여러 브랜치를 관리하는 하나의 흐름 엔티티 */
 @Builder
