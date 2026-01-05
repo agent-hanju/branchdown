@@ -15,8 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import me.hanju.branchdown.IntegrationTestBase;
 import me.hanju.branchdown.constant.StreamConstants;
-import me.hanju.branchdown.api.dto.PointDto;
-import me.hanju.branchdown.api.dto.StreamDto;
+import me.hanju.branchdown.dto.PointDto;
+import me.hanju.branchdown.dto.StreamDto;
 import me.hanju.branchdown.entity.BranchEntity;
 import me.hanju.branchdown.entity.PointEntity;
 import me.hanju.branchdown.entity.StreamEntity;

@@ -33,8 +33,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import me.hanju.branchdown.api.dto.PointDto;
 import me.hanju.branchdown.config.IntegerListConverter;
+import me.hanju.branchdown.dto.PointDto;
 
 /** 하나의 포인트를 지정하는 엔티티 */
 @Builder

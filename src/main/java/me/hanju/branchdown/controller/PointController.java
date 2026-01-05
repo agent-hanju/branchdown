@@ -13,8 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import me.hanju.branchdown.api.dto.CommonResponseDto;
-import me.hanju.branchdown.api.dto.PointDto;
+import me.hanju.branchdown.dto.PointDto;
 import me.hanju.branchdown.service.PointService;
 
 @Tag(name = "Point", description = "포인트 관리 API")
@@ -27,18 +26,18 @@ public class PointController {
 
   @Operation(summary = "포인트 추가", description = "지정한 포인트 아래에 새로운 포인트를 추가합니다 (브랜칭 포함)")
   @PostMapping("/{id}/down")
-  public ResponseEntity<CommonResponseDto<PointDto.Response>> pointDown(
+  public ResponseEntity<PointDto.Response> pointDown(
       @PathVariable Long id,
       @RequestBody PointDto.DownRequest request) {
     PointDto.Response response = pointService.pointDown(id, request.itemId());
-    return ResponseEntity.ok(CommonResponseDto.success(response));
+    return ResponseEntity.ok(response);
   }
 
   @Operation(summary = "조상 포인트 조회", description = "지정한 포인트의 상위 depth에 있는 조상 포인트들을 조회합니다")
   @GetMapping("/{id}/ancestors")
-  public ResponseEntity<CommonResponseDto<List<PointDto.Response>>> getAncestors(
+  public ResponseEntity<List<PointDto.Response>> getAncestors(
       @PathVariable Long id) {
     List<PointDto.Response> response = pointService.getAncestors(id);
-    return ResponseEntity.ok(CommonResponseDto.success(response));
+    return ResponseEntity.ok(response);
   }
 }

@@ -14,9 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import me.hanju.branchdown.api.dto.CommonResponseDto;
-import me.hanju.branchdown.api.dto.PointDto;
-import me.hanju.branchdown.api.dto.StreamDto;
+import me.hanju.branchdown.dto.PointDto;
+import me.hanju.branchdown.dto.StreamDto;
 import me.hanju.branchdown.service.StreamService;
 
 @Tag(name = "Stream", description = "스트림 관리 API")
@@ -29,42 +28,42 @@ public class StreamController {
 
   @Operation(summary = "스트림 생성", description = "새로운 스트림을 생성합니다")
   @PostMapping
-  public ResponseEntity<CommonResponseDto<StreamDto.Response>> createStream() {
+  public ResponseEntity<StreamDto.Response> createStream() {
     StreamDto.Response response = streamService.createStream();
-    return ResponseEntity.ok(CommonResponseDto.success(response));
+    return ResponseEntity.ok(response);
   }
 
   @Operation(summary = "스트림 조회", description = "스트림 ID로 스트림을 조회합니다")
   @GetMapping("/{id}")
-  public ResponseEntity<CommonResponseDto<StreamDto.Response>> getStream(
+  public ResponseEntity<StreamDto.Response> getStream(
       @PathVariable Long id) {
     StreamDto.Response response = streamService.getStream(id);
-    return ResponseEntity.ok(CommonResponseDto.success(response));
+    return ResponseEntity.ok(response);
   }
 
   @Operation(summary = "스트림 삭제", description = "스트림을 삭제합니다")
   @DeleteMapping("/{id}")
-  public ResponseEntity<CommonResponseDto<Void>> deleteStream(
+  public ResponseEntity<Void> deleteStream(
       @PathVariable Long id) {
     streamService.deleteStream(id);
-    return ResponseEntity.ok(CommonResponseDto.success(null));
+    return ResponseEntity.noContent().build();
   }
 
   @Operation(summary = "스트림 포인트 목록 조회", description = "스트림의 처음부터 가장 최근 브랜치까지의 포인트 목록을 조회합니다")
   @GetMapping("/{id}/points")
-  public ResponseEntity<CommonResponseDto<List<PointDto.Response>>> getStreamPoints(
+  public ResponseEntity<List<PointDto.Response>> getStreamPoints(
       @PathVariable Long id) {
     List<PointDto.Response> response = streamService.getStreamPoints(id);
-    return ResponseEntity.ok(CommonResponseDto.success(response));
+    return ResponseEntity.ok(response);
   }
 
   @Operation(summary = "브랜치 포인트 목록 조회", description = "특정 브랜치의 포인트 목록을 조회합니다")
   @GetMapping("/{id}/branches/{branchNum}/points")
-  public ResponseEntity<CommonResponseDto<List<PointDto.Response>>> getBranchMessages(
+  public ResponseEntity<List<PointDto.Response>> getBranchMessages(
       @PathVariable Long id,
       @PathVariable int branchNum,
       @RequestParam(defaultValue = "0") int depth) {
     List<PointDto.Response> response = streamService.getBranchMessages(id, branchNum, depth);
-    return ResponseEntity.ok(CommonResponseDto.success(response));
+    return ResponseEntity.ok(response);
   }
 }

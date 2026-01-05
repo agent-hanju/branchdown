@@ -2,9 +2,6 @@
 
 브랜치 기반 Append-Only 트리 구조 API
 
-[![Java](https://img.shields.io/badge/Java-21-orange)](https://openjdk.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.9-brightgreen)](https://spring.io/projects/spring-boot)
-
 ## 프로젝트 개요
 
 특정 지점부터 **분기(Branch)** 를 생성하여 여러 흐름을 관리하는 순수 트리 구조 자료구조 API입니다.
@@ -68,6 +65,48 @@ open http://localhost:8080/docs
 - **URL**: http://localhost:8080/docs
 - **API Docs**: http://localhost:8080/v3/api-docs
 
+### 응답 형식
+
+#### 성공 응답
+
+```json
+// GET /api/streams/1
+{
+  "id": 1,
+  "branchCount": 2,
+  "createdAt": "2026-01-06T12:00:00"
+}
+
+// GET /api/points/5/ancestors
+[
+  { "id": 1, "streamId": 1, "branchNum": 0, "depth": 0, "itemId": null },
+  { "id": 5, "streamId": 1, "branchNum": 0, "depth": 1, "itemId": "item-uuid" }
+]
+
+// DELETE /api/streams/1
+// 204 No Content (본문 없음)
+```
+
+#### 에러 응답 (RFC 7807 ProblemDetail)
+
+```json
+// 404 Not Found
+{
+  "type": "about:blank",
+  "title": "Resource Not Found",
+  "status": 404,
+  "detail": "Stream not found: 999"
+}
+
+// 400 Bad Request (Validation)
+{
+  "type": "about:blank",
+  "title": "Validation Failed",
+  "status": 400,
+  "detail": "itemId: must not be blank"
+}
+```
+
 ### 주요 엔드포인트
 
 #### Stream API
@@ -102,8 +141,7 @@ branchdown/
 │   │   └── PointController.java
 │   ├── dto/                 # 요청/응답 DTO
 │   │   ├── StreamDto.java
-│   │   ├── PointDto.java
-│   │   └── CommonResponseDto.java
+│   │   └── PointDto.java
 │   ├── entity/              # JPA 엔티티
 │   │   ├── StreamEntity.java
 │   │   ├── BranchEntity.java
@@ -121,8 +159,7 @@ branchdown/
 │       └── PathUtils.java          # 브랜치 경로 계산
 └── src/main/resources/
     ├── application.yml             # 기본 설정
-    ├── application-prod.yml        # 운영 환경 설정
-    └── schema.sql                  # MariaDB 스키마
+    └── application-prod.yml        # 운영 환경 설정
 ```
 
 ## 환경별 설정
@@ -165,7 +202,6 @@ services:
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
     volumes:
       - mariadb_data:/var/lib/mysql
-      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     healthcheck:
       test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
       interval: 10s
@@ -187,11 +223,11 @@ MARIADB_PASSWORD=your_app_password
 
 ### 주요 환경변수
 
-| 환경변수 | 기본값 | 설명 |
-| -------- | ------ | ---- |
-| `DDL_AUTO` | `update` | Hibernate DDL 전략 (`update`, `validate`, `none`) |
-| `CONSUL_ENABLED` | `false` | Consul Discovery 활성화 여부 |
-| `CONSUL_HOST` | `localhost` | Consul 서버 호스트 |
+| 환경변수         | 기본값      | 설명                                              |
+| ---------------- | ----------- | ------------------------------------------------- |
+| `DDL_AUTO`       | `update`    | Hibernate DDL 전략 (`update`, `validate`, `none`) |
+| `CONSUL_ENABLED` | `false`     | Consul Discovery 활성화 여부                      |
+| `CONSUL_HOST`    | `localhost` | Consul 서버 호스트                                |
 
 **운영 환경 특징:**
 
@@ -200,40 +236,6 @@ MARIADB_PASSWORD=your_app_password
 - Actuator 포트 분리 (8081) 및 엔드포인트 제한
 - SQL 로깅 비활성화
 
-## 관련 프로젝트
-
-| 프로젝트                                                              | 설명                                                |
-| --------------------------------------------------------------------- | --------------------------------------------------- |
-| [branchdown-api](https://github.com/agent-hanju/branchdown-api)       | 공유 DTO 라이브러리 (`PointDto`, `StreamDto` 등)    |
-| [branchdown-client](https://github.com/agent-hanju/branchdown-client) | Java 클라이언트 라이브러리 (WebClient, OkHttp 지원) |
-
-### 클라이언트 사용 예시
-
-```gradle
-// build.gradle
-implementation 'com.github.agent-hanju:branchdown-client:0.2.2'
-```
-
-```java
-// Bean 등록
-@Bean
-BranchdownClient branchdownClient(WebClient.Builder builder) {
-    return new WebClientBranchdownClient(builder, "http://branchdown:8080");
-}
-
-// 사용
-StreamDto.Response stream = branchdownClient.createStream();
-PointDto.Response point = branchdownClient.addPoint(parentPointId, "item-uuid");
-List<PointDto.Response> ancestors = branchdownClient.getAncestors(pointId);
-```
-
-## 변경 이력
-
-### v0.2.2
-
-- 주요 DTO (`PointDto`, `StreamDto`)를 [branchdown-api](https://github.com/agent-hanju/branchdown-api)로 이전
-- 클라이언트 라이브러리 [branchdown-client](https://github.com/agent-hanju/branchdown-client) 분리
-
 ## 문서
 
 - **[DATABASE_DESIGN.md](DATABASE_DESIGN.md)** - 데이터베이스 설계 (테이블 명세)
@@ -241,4 +243,4 @@ List<PointDto.Response> ancestors = branchdownClient.getAncestors(pointId);
 
 ---
 
-Copyright (c) 2025 Hanju.
+Copyright (c) 2026 Hanju.

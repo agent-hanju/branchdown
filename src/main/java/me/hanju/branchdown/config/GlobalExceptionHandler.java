@@ -1,68 +1,63 @@
 package me.hanju.branchdown.config;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.ProblemDetail;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import lombok.extern.slf4j.Slf4j;
-import me.hanju.branchdown.api.dto.CommonResponseDto;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
   @ExceptionHandler(NoSuchElementException.class)
-  public ResponseEntity<CommonResponseDto<Void>> handleNoSuchElementException(NoSuchElementException e) {
+  public ProblemDetail handleNoSuchElementException(NoSuchElementException e) {
     log.warn("NoSuchElementException: {}", e.getMessage());
-    return ResponseEntity
-        .status(HttpStatus.NOT_FOUND)
-        .body(CommonResponseDto.error(e.getMessage()));
+    ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
+    problem.setTitle("Resource Not Found");
+    return problem;
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
-  public ResponseEntity<CommonResponseDto<Void>> handleIllegalArgumentException(IllegalArgumentException e) {
+  public ProblemDetail handleIllegalArgumentException(IllegalArgumentException e) {
     log.warn("IllegalArgumentException: {}", e.getMessage());
-    return ResponseEntity
-        .status(HttpStatus.BAD_REQUEST)
-        .body(CommonResponseDto.error(e.getMessage()));
+    ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    problem.setTitle("Invalid Argument");
+    return problem;
   }
 
   @ExceptionHandler(IllegalStateException.class)
-  public ResponseEntity<CommonResponseDto<Void>> handleIllegalStateException(IllegalStateException e) {
+  public ProblemDetail handleIllegalStateException(IllegalStateException e) {
     log.error("IllegalStateException: {}", e.getMessage());
-    return ResponseEntity
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .body(CommonResponseDto.error(e.getMessage()));
+    ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+    problem.setTitle("Invalid State");
+    return problem;
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<CommonResponseDto<Map<String, String>>> handleValidationException(
-      MethodArgumentNotValidException e) {
-    Map<String, String> errors = new HashMap<>();
-    e.getBindingResult().getAllErrors().forEach(error -> {
-      String fieldName = ((FieldError) error).getField();
-      String errorMessage = error.getDefaultMessage();
-      errors.put(fieldName, errorMessage);
-    });
+  public ProblemDetail handleValidationException(MethodArgumentNotValidException e) {
+    String detail = e.getBindingResult().getAllErrors().stream()
+        .map(error -> ((FieldError) error).getField() + ": " + error.getDefaultMessage())
+        .collect(Collectors.joining(", "));
 
-    log.warn("Validation failed: {}", errors);
-    return ResponseEntity
-        .status(HttpStatus.BAD_REQUEST)
-        .body(CommonResponseDto.error("Validation failed", errors));
+    log.warn("Validation failed: {}", detail);
+    ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
+    problem.setTitle("Validation Failed");
+    return problem;
   }
 
   @ExceptionHandler(Exception.class)
-  public ResponseEntity<CommonResponseDto<Void>> handleException(Exception e) {
+  public ProblemDetail handleException(Exception e) {
     log.error("Unexpected exception", e);
-    return ResponseEntity
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .body(CommonResponseDto.error("Internal server error: " + e.getMessage()));
+    ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+        HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error: " + e.getMessage());
+    problem.setTitle("Internal Server Error");
+    return problem;
   }
 }
