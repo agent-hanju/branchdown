@@ -1,7 +1,6 @@
 package me.hanju.branchdown.dto;
 
 import java.time.Instant;
-import java.util.List;
 
 /** Branchdown Point DTO */
 public class PointDto {
@@ -13,11 +12,10 @@ public class PointDto {
       Integer branchNum,
       Integer depth,
       String itemId,
-      List<Integer> childBranchNums,
+      int[] childBranchNums,
       Instant createdAt) {
   }
 
-  public static record DownRequest(
-      String itemId) {
+  public static record DownRequest(String itemId) {
   }
 }

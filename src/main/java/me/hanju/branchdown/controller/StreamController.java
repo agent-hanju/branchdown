@@ -62,7 +62,7 @@ public class StreamController {
   public ResponseEntity<List<PointDto.Response>> getBranchMessages(
       @PathVariable Long id,
       @PathVariable int branchNum,
-      @RequestParam(defaultValue = "0") int depth) {
+      @RequestParam(name = "depth", defaultValue = "0") int depth) {
     List<PointDto.Response> response = streamService.getBranchMessages(id, branchNum, depth);
     return ResponseEntity.ok(response);
   }

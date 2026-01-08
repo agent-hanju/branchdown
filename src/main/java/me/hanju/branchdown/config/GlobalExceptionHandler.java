@@ -1,12 +1,9 @@
 package me.hanju.branchdown.config;
 
 import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -37,18 +34,6 @@ public class GlobalExceptionHandler {
     log.error("IllegalStateException: {}", e.getMessage());
     ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
     problem.setTitle("Invalid State");
-    return problem;
-  }
-
-  @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ProblemDetail handleValidationException(MethodArgumentNotValidException e) {
-    String detail = e.getBindingResult().getAllErrors().stream()
-        .map(error -> ((FieldError) error).getField() + ": " + error.getDefaultMessage())
-        .collect(Collectors.joining(", "));
-
-    log.warn("Validation failed: {}", detail);
-    ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
-    problem.setTitle("Validation Failed");
     return problem;
   }
 

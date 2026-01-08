@@ -1,8 +1,6 @@
 package me.hanju.branchdown.entity;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.Comment;
@@ -33,8 +31,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import me.hanju.branchdown.config.IntegerListConverter;
+import me.hanju.branchdown.config.IntArrayConverter;
 import me.hanju.branchdown.dto.PointDto;
+import me.hanju.branchdown.util.PathUtils;
 
 /** 하나의 포인트를 지정하는 엔티티 */
 @Builder
@@ -110,9 +109,9 @@ public class PointEntity {
   /** 이 포인트 아래로 이어지는 브랜치의 branchNum */
   @Builder.Default
   @Column(name = "child_branch_nums", nullable = false)
-  @Convert(converter = IntegerListConverter.class)
+  @Convert(converter = IntArrayConverter.class)
   @Comment("이 포인트를 베이스로 하는 branch_num 목록(쉼표로 구분)")
-  private List<Integer> childBranchNums = new ArrayList<>();
+  private int[] childBranchNums = new int[0];
 
   /**
    * 이 포인트 아래로 이어지는 branchNum 추가
@@ -120,10 +119,7 @@ public class PointEntity {
    * @param branchNum 추가할 branchNum
    */
   public void addChildBranchNum(final int branchNum) {
-    // JPA 기준으로는 값이기 때문에 포인터 변경 필요
-    List<Integer> newChildBranchNums = new ArrayList<>(this.childBranchNums);
-    newChildBranchNums.add(branchNum);
-    this.childBranchNums = newChildBranchNums;
+    this.childBranchNums = PathUtils.append(this.childBranchNums, branchNum);
   }
 
   public PointDto.Response toResponse() {

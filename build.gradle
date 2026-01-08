@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'me.hanju'
-version = '0.3.0'
+version = '0.3.1'
 description = "Branching, Append-Only Tree Structure API"
 
 java {
@@ -37,6 +37,10 @@ dependencies {
   developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
   runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+  runtimeOnly 'org.postgresql:postgresql'
+  runtimeOnly 'com.mysql:mysql-connector-j'
+  runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
+  runtimeOnly 'com.h2database:h2'
   runtimeOnly 'org.springframework.cloud:spring-cloud-starter-consul-discovery'
 
   compileOnly 'org.projectlombok:lombok'

@@ -1,5 +1,6 @@
 package me.hanju.branchdown.service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -42,13 +43,13 @@ public class PointService {
     // 2. 브랜치 상태 확인
     BranchEntity branch;
     // 2-1. 이어지는 브랜치가 없다면 기존 브랜치 사용
-    if (point.getChildBranchNums().isEmpty()) {
+    if (point.getChildBranchNums().length == 0) {
       branch = point.getBranch();
     } else {
       // 2-2. 이어지는 브랜치가 있다면 신규 브랜치 생성
       BranchEntity parentBranch = point.getBranch();
       StreamEntity stream = parentBranch.getStream();
-      String newPath = PathUtils.appendToPath(parentBranch.getPath(), parentBranch.getBranchNum());
+      String newPath = PathUtils.append(parentBranch.getPath(), parentBranch.getBranchNum());
 
       branch = branchRepository.save(
           BranchEntity.builder()
@@ -61,8 +62,11 @@ public class PointService {
     point.addChildBranchNum(branch.getBranchNum());
 
     // 3. 포인트 추가
-    return pointRepository.save(PointEntity.builder().branch(branch).depth(point.getDepth() + 1).itemId(itemId).build())
-        .toResponse();
+    PointEntity newPoint = pointRepository.save(
+        PointEntity.builder().branch(branch).depth(point.getDepth() + 1).itemId(itemId).build());
+    branch.addPoint(newPoint);
+
+    return newPoint.toResponse();
   }
 
   /**
@@ -81,11 +85,12 @@ public class PointService {
     Long streamId = branch.getStream().getId();
 
     // branch의 path를 파싱하여 경로에 포함된 branchNum 목록 생성
-    List<Integer> branchNums = PathUtils.parsePath(branch.getPath());
-    branchNums.add(branch.getBranchNum());
+    int[] branchNums = PathUtils.append(
+        PathUtils.parse(branch.getPath()),
+        branch.getBranchNum());
 
     List<PointEntity> ancestors = pointRepository.findAncestorsUsingPath(
-        streamId, branchNums, point.getDepth());
+        streamId, Arrays.stream(branchNums).boxed().toList(), point.getDepth());
 
     return ancestors.stream().map(PointEntity::toResponse).toList();
   }

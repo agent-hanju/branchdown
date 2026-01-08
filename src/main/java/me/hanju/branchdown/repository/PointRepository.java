@@ -11,6 +11,14 @@ import me.hanju.branchdown.entity.PointEntity;
 @Repository
 public interface PointRepository extends JpaRepository<PointEntity, Long> {
 
+  /**
+   * 특정 브랜치의 depth를 초과하는 Point들을 조회합니다.
+   *
+   * @param streamId   스트림 ID
+   * @param branchNums 브랜치 경로 (path를 파싱한 결과 + 자기 자신의 branchNum)
+   * @param depth      최대 depth (이 depth 이하의 Point들을 조회, 자기 자신 포함, 루트 제외)
+   * @return 자신 포함 조상 Point 목록 (depth 오름차순, 루트 제외)
+   */
   @Query(value = """
       SELECT * FROM points AS p
       WHERE p.stream_id = :streamId

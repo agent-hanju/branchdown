@@ -15,9 +15,9 @@ spring:
         health-check-interval: 10s
         acl-token: ${CONSUL_ACL_TOKEN:}
   datasource:
-    url: ${MARIADB_URL}
-    username: ${MARIADB_USER}
-    password: ${MARIADB_PASSWORD}
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: ${DDL_AUTO:update}

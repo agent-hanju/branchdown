@@ -3,7 +3,6 @@ package me.hanju.branchdown.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -116,7 +115,7 @@ class StreamServiceIntegrationTest extends IntegrationTestBase {
           .branch(rootPoint.getBranch())
           .depth(1)
           .itemId("item1")
-          .childBranchNums(new ArrayList<>())
+          .childBranchNums(new int[0])
           .build();
       pointRepository.save(point);
       rootPoint.addChildBranchNum(rootPoint.getBranch().getBranchNum());
@@ -173,13 +172,13 @@ class StreamServiceIntegrationTest extends IntegrationTestBase {
           .branch(branch)
           .depth(1)
           .itemId("item1")
-          .childBranchNums(new ArrayList<>())
+          .childBranchNums(new int[0])
           .build();
       PointEntity point2 = PointEntity.builder()
           .branch(branch)
           .depth(2)
           .itemId("item2")
-          .childBranchNums(new ArrayList<>())
+          .childBranchNums(new int[0])
           .build();
       pointRepository.save(point1);
       pointRepository.save(point2);

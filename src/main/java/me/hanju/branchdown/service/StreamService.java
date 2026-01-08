@@ -1,6 +1,7 @@
 package me.hanju.branchdown.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -81,10 +82,10 @@ public class StreamService {
         .findLatestBranchInChat(stream)
         .orElseThrow(() -> new IllegalStateException("Latest Branch not found"));
 
-    // path를 Integer List로 변경
-    List<Integer> branchNums = PathUtils.parsePath(latestBranch.getPath());
-    // path에 자기 자신 추가
-    branchNums.add(latestBranch.getBranchNum());
+    // path를 int 배열로 변경 후 자기 자신 추가
+    int[] branchNums = PathUtils.append(
+        PathUtils.parse(latestBranch.getPath()),
+        latestBranch.getBranchNum());
     List<PointEntity> messages = pathToPoints(stream.getId(), branchNums, -1);
 
     return messages.stream().map(PointEntity::toResponse).toList();
@@ -98,15 +99,16 @@ public class StreamService {
         .findById(new BranchId(stream.getId(), branchNum))
         .orElseThrow(() -> new IllegalArgumentException("Branch not found"));
 
-    String basePath = PathUtils.appendToPath(branch.getPath(), branchNum);
-    List<Integer> branchNums = PathUtils.parsePath(basePath);
+    String basePath = PathUtils.append(branch.getPath(), branchNum);
+    int[] branchNums = PathUtils.parse(basePath);
 
     List<PointEntity> points = pathToPoints(stream.getId(), branchNums, depth);
     return points.stream().map(PointEntity::toResponse).toList();
   }
 
-  private List<PointEntity> pathToPoints(Long streamId, List<Integer> branchNums, int depth) {
-    List<PointEntity> messages = pointRepository.findAllUsingPath(streamId, branchNums, depth);
+  private List<PointEntity> pathToPoints(Long streamId, int[] branchNums, int depth) {
+    List<PointEntity> messages = pointRepository.findAllUsingPath(
+        streamId, Arrays.stream(branchNums).boxed().toList(), depth);
 
     // 위 쿼리는 각 depth 별 최대 branchNum인 message들을 가져오므로 branchNum 변곡점에서 절삭
     int i = 0;

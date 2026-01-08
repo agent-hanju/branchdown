@@ -114,7 +114,7 @@ class PointServiceIntegrationTest extends IntegrationTestBase {
       assertThat(b2.branchNum()).isEqualTo(2);
 
       PointEntity updatedRoot = pointRepository.findById(rootPoint.getId()).orElseThrow();
-      assertThat(updatedRoot.getChildBranchNums()).containsExactlyInAnyOrder(0, 1, 2);
+      assertThat(updatedRoot.getChildBranchNums()).containsExactlyInAnyOrder(new int[] { 0, 1, 2 });
     }
 
     @Test
